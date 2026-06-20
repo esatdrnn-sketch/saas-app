@@ -2,33 +2,37 @@
 
 import Link from "next/link";
 import {
-  BookOpen,
-  ClipboardList,
   CreditCard,
   LayoutDashboard,
+  Link2,
+  RefreshCw,
   Settings,
-  UtensilsCrossed,
+  TrendingUp,
+  Wallet,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { label: "Dashboard", href: "/", icon: LayoutDashboard, active: true },
-  { label: "Masalar", href: "#", icon: UtensilsCrossed },
-  { label: "Siparişler", href: "#", icon: ClipboardList },
-  { label: "Menü Yönetimi", href: "#", icon: BookOpen },
-  { label: "iyzico Ödemeleri", href: "/admin", icon: CreditCard },
-  { label: "Ayarlar", href: "#", icon: Settings },
+  { label: "Failed Payments", href: "#", icon: CreditCard },
+  { label: "Recovery Campaigns", href: "#", icon: RefreshCw },
+  { label: "Retained Revenue", href: "#", icon: TrendingUp },
+  { label: "Integrations", href: "#", icon: Link2 },
+  { label: "Settings", href: "#", icon: Settings },
 ];
 
 export function SidebarNav() {
   return (
     <aside className="flex w-64 shrink-0 flex-col border-r border-slate-200 bg-white">
       <div className="border-b border-slate-200 px-6 py-5">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-indigo-600">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-indigo-600">
           Churn Recovery
         </p>
-        <h1 className="mt-2 text-lg font-semibold text-slate-900">
-          Yönetim Paneli
+        <h1 className="mt-2 text-base font-semibold leading-snug text-slate-900">
+          SaaS Churn Recovery
+          <span className="block text-sm font-normal text-slate-500">
+            &amp; Dunning Dashboard
+          </span>
         </h1>
       </div>
 
@@ -54,13 +58,16 @@ export function SidebarNav() {
       </nav>
 
       <div className="border-t border-slate-200 p-4">
-        <div className="border border-slate-200 bg-slate-50 px-4 py-3 rounded-none">
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-            Bugün
-          </p>
-          <p className="mt-1 text-sm font-semibold text-slate-900">
-            24 aktif sipariş
-          </p>
+        <div className="flex items-center gap-3 border border-slate-200 bg-slate-50 px-4 py-3 rounded-none">
+          <div className="flex size-9 items-center justify-center bg-indigo-600 text-white rounded-none">
+            <Wallet className="size-4" />
+          </div>
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+              Bu ay kurtarılan
+            </p>
+            <p className="text-sm font-semibold text-slate-900">₺128.400</p>
+          </div>
         </div>
       </div>
     </aside>
