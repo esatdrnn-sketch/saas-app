@@ -1,0 +1,68 @@
+{
+  "project": "saas-app",
+  "installedAt": "2026-06-19",
+  "location": ".cursor/skills",
+  "source": "C:\\Users\\sahra\\.cursor\\skills",
+  "bundles": [
+    {
+      "name": "Essentials",
+      "purpose": "Her görevde temel planlama, debug ve kod kalitesi",
+      "skills": [
+        "concise-planning",
+        "lint-and-validate",
+        "git-pushing",
+        "kaizen",
+        "systematic-debugging"
+      ]
+    },
+    {
+      "name": "Full-Stack Developer",
+      "purpose": "Next.js + API + veritabanı + ödeme akışı geliştirme",
+      "skills": [
+        "senior-fullstack",
+        "frontend-developer",
+        "backend-dev-guidelines",
+        "api-patterns",
+        "database-design",
+        "stripe-integration"
+      ]
+    },
+    {
+      "name": "QA & Testing",
+      "purpose": "Webhook, kart güncelleme ve admin panel testleri",
+      "skills": [
+        "test-driven-development",
+        "browser-automation",
+        "e2e-testing-patterns",
+        "ab-test-setup",
+        "code-review-checklist",
+        "test-fixing"
+      ]
+    },
+    {
+      "name": "Security Developer",
+      "purpose": "Webhook, token ve ödeme güvenliği",
+      "skills": [
+        "api-security-best-practices",
+        "auth-implementation-patterns",
+        "backend-security-coder",
+        "frontend-security-coder",
+        "cc-skill-security-review",
+        "pci-compliance"
+      ]
+    },
+    {
+      "name": "DevOps & Cloud",
+      "purpose": "Neon, deploy ve production hardening",
+      "skills": [
+        "docker-expert",
+        "aws-serverless",
+        "kubernetes-architect",
+        "terraform-specialist",
+        "environment-setup-guide",
+        "deployment-procedures",
+        "bash-linux"
+      ]
+    }
+  ]
+}
