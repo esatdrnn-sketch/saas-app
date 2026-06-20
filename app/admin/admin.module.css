@@ -13,6 +13,27 @@
 
 .topBar {
   margin-bottom: 32px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.logoutButton {
+  background: transparent;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 8px;
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+  margin-top: 10px;
+}
+
+.logoutButton:hover {
+  border-color: #dc2626;
+  color: #dc2626;
 }
 
 .brand {

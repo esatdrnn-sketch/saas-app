@@ -5,6 +5,7 @@ import {
   CANCEL_REASON_ORDER,
 } from "@/lib/cancellation";
 import styles from "./admin.module.css";
+import LogoutButton from "./LogoutButton";
 
 export const dynamic = "force-dynamic";
 
@@ -70,6 +71,7 @@ export default async function AdminPage() {
         <header className={styles.topBar}>
           <p className={styles.brand}>Churn Recovery</p>
           <h1 className={styles.heading}>Kurtarma Paneli</h1>
+          <LogoutButton />
         </header>
 
         <section className={styles.hero} aria-label="Kurtarma oranı">
