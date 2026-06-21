@@ -11,7 +11,7 @@ export function DashboardHeader() {
         <input
           type="search"
           placeholder="Müşteri, fatura veya kampanya ara..."
-          className="h-11 w-full rounded-full border border-slate-200 bg-[#f5f7f6] pl-11 pr-16 text-sm text-slate-700 outline-none placeholder:text-slate-400 focus:border-emerald-700/30 focus:ring-2 focus:ring-emerald-700/10"
+          className="h-11 w-full rounded-full border border-slate-200 bg-slate-50 pl-11 pr-16 text-sm text-slate-700 outline-none placeholder:text-slate-400 focus:border-blue-500/30 focus:ring-2 focus:ring-blue-500/10"
         />
         <span className="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-medium text-slate-400">
           ⌘ F
@@ -36,7 +36,7 @@ export function DashboardHeader() {
       </button>
 
       <Avatar className="size-10 border border-slate-200">
-        <AvatarFallback className="rounded-full bg-[#015021] text-xs font-semibold text-white">
+        <AvatarFallback className="rounded-full bg-blue-600 text-xs font-semibold text-white">
           AD
         </AvatarFallback>
       </Avatar>

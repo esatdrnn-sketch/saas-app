@@ -39,7 +39,7 @@ export function SidebarNav() {
   return (
     <aside className="flex h-screen w-[260px] shrink-0 flex-col border-r border-slate-200/80 bg-white px-5 py-6">
       <Link href="/" className="mb-8 flex items-center gap-3 px-2">
-        <div className="grid size-9 place-content-center rounded-full bg-[#015021] text-xs font-bold text-white">
+        <div className="grid size-9 place-content-center rounded-full bg-blue-600 text-xs font-bold text-white">
           RP
         </div>
         <span className="text-xl font-bold tracking-tight text-slate-900">
@@ -96,8 +96,8 @@ function SidebarLink({
       className={cn(
         "flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium transition-colors",
         active
-          ? "bg-[#015021] text-white shadow-sm shadow-emerald-900/20"
-          : "text-slate-600 hover:bg-slate-50"
+          ? "bg-blue-600 text-white shadow-sm shadow-blue-900/20"
+          : "text-slate-600 hover:bg-slate-100"
       )}
     >
       <Icon className="size-[18px] shrink-0" />
@@ -108,7 +108,7 @@ function SidebarLink({
             "rounded-full px-2 py-0.5 text-[11px] font-semibold",
             active
               ? "bg-white/20 text-white"
-              : "bg-[#015021] text-white"
+              : "bg-blue-600 text-white"
           )}
         >
           {item.badge}

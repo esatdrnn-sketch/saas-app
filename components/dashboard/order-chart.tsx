@@ -16,7 +16,7 @@ export function RecoveredRevenueChart() {
   const peak = Math.max(...weeklyRevenue.map((item) => item.value));
 
   return (
-    <section className="min-w-0 rounded-[28px] border border-slate-200/80 bg-white p-6 shadow-sm">
+    <section className="min-w-0 rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
       <div className="mb-6 flex items-center justify-between gap-4">
         <div>
           <h3 className="text-lg font-bold text-slate-900">
@@ -48,15 +48,15 @@ export function RecoveredRevenueChart() {
               className="flex min-w-0 flex-1 flex-col items-center justify-end gap-3"
             >
               <div
-                className="w-full max-w-12 rounded-t-[18px] rounded-b-md transition-all"
+                className="w-full max-w-12 rounded-t-xl rounded-b-md transition-all"
                 style={{ height: `${item.value}%` }}
                 title={item.amount}
               >
                 <div
                   className={
                     index % 2 === 0
-                      ? "size-full rounded-t-[18px] bg-[#015021]"
-                      : "size-full rounded-t-[18px] bg-[#7ed957]"
+                      ? "size-full rounded-t-xl bg-blue-600"
+                      : "size-full rounded-t-xl bg-blue-300"
                   }
                 />
               </div>
@@ -70,10 +70,10 @@ export function RecoveredRevenueChart() {
 
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4 text-sm">
         <span className="font-medium text-slate-700">
-          Average: <span className="text-[#015021]">{average}%</span>
+          Average: <span className="text-blue-600">{average}%</span>
         </span>
         <span className="font-medium text-slate-700">
-          Peak: <span className="text-[#015021]">{peak}%</span>
+          Peak: <span className="text-blue-600">{peak}%</span>
         </span>
       </div>
     </section>

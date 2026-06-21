@@ -42,10 +42,10 @@ export function StatsOverview() {
           return (
             <div
               key={stat.label}
-              className="relative overflow-hidden rounded-[28px] bg-[#015021] p-6 text-white shadow-sm"
+              className="relative overflow-hidden rounded-2xl bg-blue-600 p-6 text-white shadow-sm"
             >
               <div className="mb-6 flex items-start justify-between">
-                <div className="grid size-10 place-content-center rounded-full bg-white/15">
+                <div className="grid size-10 place-content-center rounded-xl bg-white/15">
                   <Icon className="size-5" />
                 </div>
                 <ArrowUpRight className="size-4 text-white/80" />
@@ -61,13 +61,13 @@ export function StatsOverview() {
         return (
           <div
             key={stat.label}
-            className="rounded-[28px] border border-slate-200/80 bg-white p-6 shadow-sm"
+            className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm"
           >
             <div className="mb-6 flex items-start justify-between">
-              <div className="grid size-10 place-content-center rounded-full bg-[#ecf7ef] text-[#015021]">
+              <div className="grid size-10 place-content-center rounded-xl bg-blue-50 text-blue-600">
                 <Icon className="size-5" />
               </div>
-              <ArrowUpRight className="size-4 text-[#015021]" />
+              <ArrowUpRight className="size-4 text-blue-600" />
             </div>
             <p className="text-sm font-medium text-slate-600">{stat.label}</p>
             <p className="mt-1 text-[11px] text-slate-400">{stat.sublabel}</p>
