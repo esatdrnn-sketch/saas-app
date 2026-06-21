@@ -24,7 +24,7 @@ type NavItem = {
 };
 
 const menuItems: NavItem[] = [
-  { label: "Dashboard", href: "/", icon: LayoutDashboard },
+  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Failed Payments", href: "#", icon: CreditCard, badge: 14 },
   { label: "Recovery Campaigns", href: "#", icon: RefreshCw },
   { label: "Retained Revenue", href: "#", icon: TrendingUp },
