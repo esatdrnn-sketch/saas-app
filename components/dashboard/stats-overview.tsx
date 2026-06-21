@@ -64,10 +64,10 @@ export function StatsOverview() {
         return (
           <div
             key={stat.label}
-            className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md dark:border-slate-800 dark:bg-slate-900"
+            className="rounded-none border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md dark:border-slate-800 dark:bg-slate-900"
           >
             <div className="mb-4 flex items-center justify-between">
-              <div className={`rounded-lg p-2 ${stat.iconBg}`}>
+              <div className={`rounded-none p-2 ${stat.iconBg}`}>
                 <Icon className={`size-5 ${stat.iconColor}`} />
               </div>
               <TrendIcon className={`size-4 ${trendColor}`} />

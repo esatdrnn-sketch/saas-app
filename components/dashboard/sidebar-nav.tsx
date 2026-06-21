@@ -17,7 +17,6 @@ import { cn } from "@/lib/utils";
 
 type NavItem = {
   label: string;
-  sublabel?: string;
   href: string;
   icon: LucideIcon;
   notifs?: number;
@@ -31,26 +30,22 @@ const mainNavItems: NavItem[] = [
   },
   {
     label: "Failed Payments",
-    sublabel: "Reddedilen Ödemeler",
     href: "#",
     icon: CreditCard,
     notifs: 14,
   },
   {
     label: "Recovery Campaigns",
-    sublabel: "Kurtarma Kampanyaları",
     href: "#",
     icon: RefreshCw,
   },
   {
     label: "Retained Revenue",
-    sublabel: "Kurtarılan Ciro",
     href: "#",
     icon: TrendingUp,
   },
   {
     label: "Integrations",
-    sublabel: "Stripe / iyzico",
     href: "#",
     icon: Link2,
   },
@@ -59,7 +54,6 @@ const mainNavItems: NavItem[] = [
 const accountNavItems: NavItem[] = [
   {
     label: "Settings",
-    sublabel: "Ayarlar",
     href: "#",
     icon: Settings,
   },
@@ -131,10 +125,10 @@ function NavOption({
       href={item.href}
       title={!open ? item.label : undefined}
       className={cn(
-        "relative flex h-11 w-full items-center rounded-md transition-all duration-200",
+        "relative flex h-11 w-full items-center rounded-none transition-all duration-200",
         active
-          ? "border-l-2 border-indigo-500 bg-indigo-50 text-indigo-700 shadow-sm dark:bg-indigo-950/50 dark:text-indigo-300"
-          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+          ? "border-l-4 border-indigo-600 bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300"
+          : "border-l-4 border-transparent text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
       )}
     >
       <div className="grid h-full w-12 shrink-0 place-content-center">
@@ -142,14 +136,9 @@ function NavOption({
       </div>
 
       {open ? (
-        <div className="min-w-0 pr-8">
-          <span className="block truncate text-sm font-medium">{item.label}</span>
-          {item.sublabel ? (
-            <span className="block truncate text-xs text-slate-500 dark:text-slate-400">
-              {item.sublabel}
-            </span>
-          ) : null}
-        </div>
+        <span className="min-w-0 truncate pr-8 text-sm font-medium">
+          {item.label}
+        </span>
       ) : null}
 
       {item.notifs && open ? (

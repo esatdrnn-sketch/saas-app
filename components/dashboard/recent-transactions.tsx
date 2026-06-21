@@ -1,4 +1,4 @@
-import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import {
   Table,
   TableBody,
@@ -14,37 +14,52 @@ const failedPayments = [
     amount: "₺2.490",
     reason: "Yetersiz Bakiye",
     status: "1. E-posta Gönderildi",
-    statusVariant: "secondary" as const,
   },
   {
     customer: "Nova Analytics",
     amount: "$149",
     reason: "Süresi Dolan Kart",
     status: "Kurtarıldı",
-    statusVariant: "default" as const,
   },
   {
     customer: "Pixel Studio",
     amount: "₺890",
     reason: "Banka Reddi",
     status: "1. E-posta Gönderildi",
-    statusVariant: "secondary" as const,
   },
   {
     customer: "Flow Metrics",
     amount: "₺1.120",
     reason: "Yetersiz Bakiye",
     status: "İptal",
-    statusVariant: "destructive" as const,
   },
   {
     customer: "Bright Labs",
     amount: "₺3.200",
     reason: "Süresi Dolan Kart",
     status: "Kurtarıldı",
-    statusVariant: "default" as const,
   },
 ];
+
+function StatusBadge({ status }: { status: string }) {
+  const styles =
+    status === "Kurtarıldı"
+      ? "bg-green-50 text-green-700 border-green-200 dark:bg-green-950/30 dark:text-green-400 dark:border-green-900"
+      : status === "İptal"
+        ? "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-400 dark:border-red-900"
+        : "bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-800/50 dark:text-slate-300 dark:border-slate-700";
+
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center rounded-none border px-2.5 py-1 text-xs font-medium",
+        styles
+      )}
+    >
+      {status}
+    </span>
+  );
+}
 
 export function FailedPaymentsTable() {
   return (
@@ -92,7 +107,7 @@ export function FailedPaymentsTable() {
                   {row.reason}
                 </TableCell>
                 <TableCell className="px-6">
-                  <Badge variant={row.statusVariant}>{row.status}</Badge>
+                  <StatusBadge status={row.status} />
                 </TableCell>
               </TableRow>
             ))}

@@ -38,25 +38,9 @@ export function RecoveredRevenueChart() {
         </p>
       </div>
 
-      <div className="grid min-w-0 gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[minmax(0,220px)_minmax(0,1fr)]">
-        <div className="grid grid-cols-2 gap-3 rounded-xl border border-slate-100 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950 lg:grid-cols-1">
-          {weeklyRevenue.map((item) => (
-            <div
-              key={`summary-${item.day}`}
-              className="rounded-lg border border-slate-100 bg-white px-3 py-2 dark:border-slate-800 dark:bg-slate-900"
-            >
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                {item.day}
-              </p>
-              <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
-                {formatAmount(item.value, item.currency)}
-              </p>
-            </div>
-          ))}
-        </div>
-
-        <div className="min-w-0 rounded-xl border border-slate-100 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-          <div className="grid h-52 min-w-0 grid-cols-7 items-end gap-1 sm:gap-3">
+      <div className="px-4 py-6 sm:px-6">
+        <div className="min-w-0 border border-slate-100 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+          <div className="grid h-56 min-w-0 grid-cols-7 items-end gap-2 sm:gap-4">
             {weeklyRevenue.map((item) => {
               const barHeight = Math.max(
                 12,
@@ -68,14 +52,20 @@ export function RecoveredRevenueChart() {
                   key={`bar-${item.day}`}
                   className="flex h-full min-w-0 flex-col items-center justify-end gap-2"
                 >
+                  <span
+                    className="text-[10px] font-medium text-slate-400 sm:text-xs"
+                    title={formatAmount(item.value, item.currency)}
+                  >
+                    {formatAmount(item.value, item.currency)}
+                  </span>
                   <div className="flex h-40 w-full items-end justify-center">
                     <div
-                      className="w-full max-w-8 rounded-t-lg bg-gradient-to-t from-indigo-600 to-indigo-400 transition-all hover:from-indigo-700 hover:to-indigo-500"
+                      className="w-full max-w-10 rounded-none bg-gradient-to-t from-indigo-600 to-indigo-400 transition-all hover:from-indigo-700 hover:to-indigo-500"
                       style={{ height: `${barHeight}%` }}
                       title={formatAmount(item.value, item.currency)}
                     />
                   </div>
-                  <span className="text-xs font-medium text-slate-500">
+                  <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
                     {item.day}
                   </span>
                 </div>
