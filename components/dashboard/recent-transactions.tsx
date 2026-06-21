@@ -1,12 +1,4 @@
 import { cn } from "@/lib/utils";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 
 const failedPayments = [
   {
@@ -14,105 +6,113 @@ const failedPayments = [
     amount: "₺2.490",
     reason: "Yetersiz Bakiye",
     status: "1. E-posta Gönderildi",
+    tone: "pending" as const,
+    initials: "AS",
+    color: "bg-orange-100 text-orange-700",
   },
   {
     customer: "Nova Analytics",
     amount: "$149",
     reason: "Süresi Dolan Kart",
     status: "Kurtarıldı",
+    tone: "success" as const,
+    initials: "NA",
+    color: "bg-emerald-100 text-emerald-700",
   },
   {
     customer: "Pixel Studio",
     amount: "₺890",
     reason: "Banka Reddi",
     status: "1. E-posta Gönderildi",
+    tone: "pending" as const,
+    initials: "PS",
+    color: "bg-sky-100 text-sky-700",
   },
   {
     customer: "Flow Metrics",
     amount: "₺1.120",
     reason: "Yetersiz Bakiye",
     status: "İptal",
+    tone: "danger" as const,
+    initials: "FM",
+    color: "bg-violet-100 text-violet-700",
   },
   {
     customer: "Bright Labs",
     amount: "₺3.200",
     reason: "Süresi Dolan Kart",
     status: "Kurtarıldı",
+    tone: "success" as const,
+    initials: "BL",
+    color: "bg-amber-100 text-amber-700",
   },
 ];
 
-function StatusBadge({ status }: { status: string }) {
-  const styles =
-    status === "Kurtarıldı"
-      ? "bg-green-50 text-green-700 border-green-200 dark:bg-green-950/30 dark:text-green-400 dark:border-green-900"
-      : status === "İptal"
-        ? "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-400 dark:border-red-900"
-        : "bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-800/50 dark:text-slate-300 dark:border-slate-700";
-
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center rounded-none border px-2.5 py-1 text-xs font-medium",
-        styles
-      )}
-    >
-      {status}
-    </span>
-  );
+function statusClass(tone: "success" | "pending" | "danger") {
+  if (tone === "success") {
+    return "bg-emerald-50 text-emerald-700 border-emerald-200";
+  }
+  if (tone === "danger") {
+    return "bg-red-50 text-red-700 border-red-200";
+  }
+  return "bg-amber-50 text-amber-700 border-amber-200";
 }
 
 export function FailedPaymentsTable() {
   return (
-    <section className="min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-      <div className="border-b border-slate-100 px-6 py-4 dark:border-slate-800">
-        <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
-          Recent Failed Payments &amp; Recovery Status
-        </h3>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          Son reddedilen ödemeler ve kurtarılma durumları
-        </p>
+    <section className="min-w-0 rounded-[28px] border border-slate-200/80 bg-white p-6 shadow-sm">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h3 className="text-lg font-bold text-slate-900">
+            Recent Failed Payments &amp; Recovery Status
+          </h3>
+          <p className="mt-1 text-sm text-slate-500">
+            Son reddedilen ödemeler ve kurtarılma durumları
+          </p>
+        </div>
+        <button
+          type="button"
+          className="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+        >
+          + Yeni Kayıt
+        </button>
       </div>
 
-      <div className="overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow className="border-slate-100 hover:bg-transparent dark:border-slate-800">
-              <TableHead className="px-6 text-slate-500 dark:text-slate-400">
-                Müşteri
-              </TableHead>
-              <TableHead className="text-slate-500 dark:text-slate-400">
-                Tutar
-              </TableHead>
-              <TableHead className="text-slate-500 dark:text-slate-400">
-                Reddedilme Nedeni
-              </TableHead>
-              <TableHead className="px-6 text-slate-500 dark:text-slate-400">
-                Otomatik Hatırlatma Durumu
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {failedPayments.map((row) => (
-              <TableRow
-                key={`${row.customer}-${row.amount}`}
-                className="border-slate-100 transition-colors hover:bg-slate-50/80 dark:border-slate-800 dark:hover:bg-slate-800/50"
+      <div className="space-y-3">
+        {failedPayments.map((row) => (
+          <div
+            key={`${row.customer}-${row.amount}`}
+            className="flex flex-col gap-4 rounded-[22px] border border-slate-100 bg-[#fcfdfc] p-4 sm:flex-row sm:items-center"
+          >
+            <div className="flex min-w-0 flex-1 items-center gap-4">
+              <div
+                className={cn(
+                  "grid size-12 shrink-0 place-content-center rounded-full text-sm font-bold",
+                  row.color
+                )}
               >
-                <TableCell className="px-6 font-medium text-slate-900 dark:text-slate-100">
+                {row.initials}
+              </div>
+              <div className="min-w-0">
+                <p className="truncate font-semibold text-slate-900">
                   {row.customer}
-                </TableCell>
-                <TableCell className="font-medium text-slate-900 dark:text-slate-100">
-                  {row.amount}
-                </TableCell>
-                <TableCell className="text-slate-600 dark:text-slate-400">
-                  {row.reason}
-                </TableCell>
-                <TableCell className="px-6">
-                  <StatusBadge status={row.status} />
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+                </p>
+                <p className="truncate text-sm text-slate-500">
+                  {row.reason} · {row.amount}
+                </p>
+              </div>
+            </div>
+
+            <span
+              className={cn(
+                "inline-flex w-fit shrink-0 rounded-full border px-3 py-1 text-xs font-semibold",
+                statusClass(row.tone)
+              )}
+            >
+              {row.status}
+            </span>
+          </div>
+        ))}
       </div>
     </section>
   );

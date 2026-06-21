@@ -3,11 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  ChevronDown,
-  ChevronsRight,
   CreditCard,
   LayoutDashboard,
   Link2,
+  LogOut,
   RefreshCw,
   Settings,
   TrendingUp,
@@ -19,103 +18,74 @@ type NavItem = {
   label: string;
   href: string;
   icon: LucideIcon;
-  notifs?: number;
+  badge?: number;
 };
 
-const mainNavItems: NavItem[] = [
-  {
-    label: "Dashboard",
-    href: "/",
-    icon: LayoutDashboard,
-  },
-  {
-    label: "Failed Payments",
-    href: "#",
-    icon: CreditCard,
-    notifs: 14,
-  },
-  {
-    label: "Recovery Campaigns",
-    href: "#",
-    icon: RefreshCw,
-  },
-  {
-    label: "Retained Revenue",
-    href: "#",
-    icon: TrendingUp,
-  },
-  {
-    label: "Integrations",
-    href: "#",
-    icon: Link2,
-  },
+const menuItems: NavItem[] = [
+  { label: "Dashboard", href: "/", icon: LayoutDashboard },
+  { label: "Failed Payments", href: "#", icon: CreditCard, badge: 14 },
+  { label: "Recovery Campaigns", href: "#", icon: RefreshCw },
+  { label: "Retained Revenue", href: "#", icon: TrendingUp },
+  { label: "Integrations", href: "#", icon: Link2 },
 ];
 
-const accountNavItems: NavItem[] = [
-  {
-    label: "Settings",
-    href: "#",
-    icon: Settings,
-  },
+const generalItems: NavItem[] = [
+  { label: "Settings", href: "#", icon: Settings },
 ];
 
-type SidebarNavProps = {
-  open: boolean;
-  setOpen: (open: boolean) => void;
-};
-
-export function SidebarNav({ open, setOpen }: SidebarNavProps) {
+export function SidebarNav() {
   const pathname = usePathname();
 
   return (
-    <nav
-      className={cn(
-        "flex h-screen shrink-0 flex-col border-r border-slate-200 bg-white p-2 shadow-sm transition-[width] duration-300 ease-in-out dark:border-slate-800 dark:bg-slate-900",
-        open ? "w-64" : "w-16"
-      )}
-    >
-      <TitleSection open={open} />
+    <aside className="flex h-screen w-[260px] shrink-0 flex-col border-r border-slate-200/80 bg-white px-5 py-6">
+      <Link href="/" className="mb-8 flex items-center gap-3 px-2">
+        <div className="grid size-9 place-content-center rounded-full bg-[#015021] text-xs font-bold text-white">
+          RP
+        </div>
+        <span className="text-xl font-bold tracking-tight text-slate-900">
+          RecoverPanel
+        </span>
+      </Link>
 
-      <div className="mb-2 min-h-0 flex-1 space-y-1 overflow-y-auto overflow-x-hidden">
-        {mainNavItems.map((item) => (
-          <NavOption
+      <div className="mb-3 px-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+        Menu
+      </div>
+
+      <nav className="space-y-1">
+        {menuItems.map((item) => (
+          <SidebarLink
             key={item.label}
             item={item}
-            open={open}
             active={pathname === item.href}
           />
         ))}
+      </nav>
 
-        {open ? (
-          <div className="space-y-1 border-t border-slate-200 pt-4 dark:border-slate-800">
-            <div className="px-3 py-2 text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
-              Account
-            </div>
-            {accountNavItems.map((item) => (
-              <NavOption key={item.label} item={item} open={open} active={false} />
-            ))}
-          </div>
-        ) : (
-          <div className="space-y-1 border-t border-slate-200 pt-4 dark:border-slate-800">
-            {accountNavItems.map((item) => (
-              <NavOption key={item.label} item={item} open={open} active={false} />
-            ))}
-          </div>
-        )}
+      <div className="mb-3 mt-8 px-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+        General
       </div>
 
-      <ToggleClose open={open} setOpen={setOpen} />
-    </nav>
+      <nav className="space-y-1">
+        {generalItems.map((item) => (
+          <SidebarLink key={item.label} item={item} active={false} />
+        ))}
+        <button
+          type="button"
+          className="flex w-full items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50"
+        >
+          <LogOut className="size-[18px] shrink-0" />
+          Logout
+        </button>
+      </nav>
+    </aside>
   );
 }
 
-function NavOption({
+function SidebarLink({
   item,
-  open,
   active,
 }: {
   item: NavItem;
-  open: boolean;
   active: boolean;
 }) {
   const Icon = item.icon;
@@ -123,95 +93,27 @@ function NavOption({
   return (
     <Link
       href={item.href}
-      title={!open ? item.label : undefined}
       className={cn(
-        "relative flex h-11 w-full items-center rounded-none transition-all duration-200",
+        "flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium transition-colors",
         active
-          ? "border-l-4 border-indigo-600 bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300"
-          : "border-l-4 border-transparent text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+          ? "bg-[#015021] text-white shadow-sm shadow-emerald-900/20"
+          : "text-slate-600 hover:bg-slate-50"
       )}
     >
-      <div className="grid h-full w-12 shrink-0 place-content-center">
-        <Icon className="size-4" />
-      </div>
-
-      {open ? (
-        <span className="min-w-0 truncate pr-8 text-sm font-medium">
-          {item.label}
-        </span>
-      ) : null}
-
-      {item.notifs && open ? (
-        <span className="absolute right-3 flex size-5 items-center justify-center rounded-full bg-indigo-500 text-xs font-medium text-white dark:bg-indigo-600">
-          {item.notifs}
+      <Icon className="size-[18px] shrink-0" />
+      <span className="flex-1 truncate">{item.label}</span>
+      {item.badge ? (
+        <span
+          className={cn(
+            "rounded-full px-2 py-0.5 text-[11px] font-semibold",
+            active
+              ? "bg-white/20 text-white"
+              : "bg-[#015021] text-white"
+          )}
+        >
+          {item.badge}
         </span>
       ) : null}
     </Link>
-  );
-}
-
-function TitleSection({ open }: { open: boolean }) {
-  return (
-    <div className="mb-6 border-b border-slate-200 pb-4 dark:border-slate-800">
-      <div className="flex cursor-pointer items-center justify-between rounded-md p-2 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800">
-        <div className="flex items-center gap-3">
-          <BrandLogo />
-          {open ? (
-            <div>
-              <span className="block text-sm font-semibold text-slate-900 dark:text-slate-100">
-                RecoverPanel
-              </span>
-              <span className="block text-xs text-slate-500 dark:text-slate-400">
-                SaaS Churn Recovery &amp; Dunning
-              </span>
-            </div>
-          ) : null}
-        </div>
-        {open ? (
-          <ChevronDown className="size-4 text-slate-400 dark:text-slate-500" />
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
-function BrandLogo() {
-  return (
-    <div className="grid size-10 shrink-0 place-content-center rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-600 shadow-sm">
-      <span className="text-sm font-bold text-white">RP</span>
-    </div>
-  );
-}
-
-function ToggleClose({
-  open,
-  setOpen,
-}: {
-  open: boolean;
-  setOpen: (open: boolean) => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={() => setOpen(!open)}
-      className="shrink-0 border-t border-slate-200 transition-colors hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800"
-      aria-label={open ? "Sidebar'ı gizle" : "Sidebar'ı göster"}
-    >
-      <div className="flex items-center p-3">
-        <div className="grid size-10 place-content-center">
-          <ChevronsRight
-            className={cn(
-              "size-4 text-slate-500 transition-transform duration-300 dark:text-slate-400",
-              open && "rotate-180"
-            )}
-          />
-        </div>
-        {open ? (
-          <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
-            Gizle
-          </span>
-        ) : null}
-      </div>
-    </button>
   );
 }

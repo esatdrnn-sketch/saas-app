@@ -1,11 +1,4 @@
-import {
-  ArrowDownRight,
-  ArrowUpRight,
-  CreditCard,
-  Percent,
-  RefreshCw,
-  Wallet,
-} from "lucide-react";
+import { ArrowUpRight, CreditCard, Percent, RefreshCw, Wallet } from "lucide-react";
 
 const stats = [
   {
@@ -13,76 +6,75 @@ const stats = [
     sublabel: "Kurtarılan Toplam Ciro",
     value: "₺128.400",
     change: "+18.2% bu ay",
-    trend: "up" as const,
     icon: Wallet,
-    iconBg: "bg-indigo-50 dark:bg-indigo-900/20",
-    iconColor: "text-indigo-600 dark:text-indigo-400",
+    featured: true,
   },
   {
     label: "Failed Invoices Today",
     sublabel: "Bugün Reddedilen Faturalar",
     value: "14",
     change: "+3 dünden",
-    trend: "down" as const,
     icon: CreditCard,
-    iconBg: "bg-rose-50 dark:bg-rose-900/20",
-    iconColor: "text-rose-600 dark:text-rose-400",
   },
   {
     label: "Active Dunning Campaigns",
     sublabel: "Aktif Kurtarma Süreçleri",
     value: "6",
     change: "2 yeni başlatıldı",
-    trend: "up" as const,
     icon: RefreshCw,
-    iconBg: "bg-violet-50 dark:bg-violet-900/20",
-    iconColor: "text-violet-600 dark:text-violet-400",
   },
   {
     label: "Recovery Rate (%)",
     sublabel: "Ödeme Kurtarma Başarı Oranı",
     value: "%64",
     change: "+4.1 puan",
-    trend: "up" as const,
     icon: Percent,
-    iconBg: "bg-emerald-50 dark:bg-emerald-900/20",
-    iconColor: "text-emerald-600 dark:text-emerald-400",
   },
 ];
 
 export function StatsOverview() {
   return (
-    <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 xl:grid-cols-4">
+    <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
       {stats.map((stat) => {
         const Icon = stat.icon;
-        const TrendIcon = stat.trend === "up" ? ArrowUpRight : ArrowDownRight;
-        const trendColor =
-          stat.trend === "up"
-            ? "text-emerald-600 dark:text-emerald-400"
-            : "text-rose-600 dark:text-rose-400";
+
+        if (stat.featured) {
+          return (
+            <div
+              key={stat.label}
+              className="relative overflow-hidden rounded-[28px] bg-[#015021] p-6 text-white shadow-sm"
+            >
+              <div className="mb-6 flex items-start justify-between">
+                <div className="grid size-10 place-content-center rounded-full bg-white/15">
+                  <Icon className="size-5" />
+                </div>
+                <ArrowUpRight className="size-4 text-white/80" />
+              </div>
+              <p className="text-sm font-medium text-white/85">{stat.label}</p>
+              <p className="mt-1 text-[11px] text-white/65">{stat.sublabel}</p>
+              <p className="mt-4 text-4xl font-bold tracking-tight">{stat.value}</p>
+              <p className="mt-3 text-xs text-white/75">{stat.change}</p>
+            </div>
+          );
+        }
 
         return (
           <div
             key={stat.label}
-            className="rounded-none border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md dark:border-slate-800 dark:bg-slate-900"
+            className="rounded-[28px] border border-slate-200/80 bg-white p-6 shadow-sm"
           >
-            <div className="mb-4 flex items-center justify-between">
-              <div className={`rounded-none p-2 ${stat.iconBg}`}>
-                <Icon className={`size-5 ${stat.iconColor}`} />
+            <div className="mb-6 flex items-start justify-between">
+              <div className="grid size-10 place-content-center rounded-full bg-[#ecf7ef] text-[#015021]">
+                <Icon className="size-5" />
               </div>
-              <TrendIcon className={`size-4 ${trendColor}`} />
+              <ArrowUpRight className="size-4 text-[#015021]" />
             </div>
-
-            <h3 className="mb-1 text-sm font-medium text-slate-600 dark:text-slate-400">
-              {stat.label}
-            </h3>
-            <p className="mb-1 text-xs text-slate-500 dark:text-slate-500">
-              {stat.sublabel}
-            </p>
-            <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+            <p className="text-sm font-medium text-slate-600">{stat.label}</p>
+            <p className="mt-1 text-[11px] text-slate-400">{stat.sublabel}</p>
+            <p className="mt-4 text-4xl font-bold tracking-tight text-slate-900">
               {stat.value}
             </p>
-            <p className={`mt-1 text-sm ${trendColor}`}>{stat.change}</p>
+            <p className="mt-3 text-xs text-slate-500">{stat.change}</p>
           </div>
         );
       })}
