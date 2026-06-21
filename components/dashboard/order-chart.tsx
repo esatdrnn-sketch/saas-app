@@ -28,7 +28,7 @@ function formatAmount(value: number, currency: "TRY" | "USD") {
 
 export function RecoveredRevenueChart() {
   return (
-    <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+    <section className="min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
       <div className="border-b border-slate-100 px-6 py-4 dark:border-slate-800">
         <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
           Haftalık Kurtarılan Ciro Analizi
@@ -38,7 +38,7 @@ export function RecoveredRevenueChart() {
         </p>
       </div>
 
-      <div className="grid gap-6 px-6 py-6 lg:grid-cols-[220px_minmax(0,1fr)]">
+      <div className="grid min-w-0 gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[minmax(0,220px)_minmax(0,1fr)]">
         <div className="grid grid-cols-2 gap-3 rounded-xl border border-slate-100 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950 lg:grid-cols-1">
           {weeklyRevenue.map((item) => (
             <div
@@ -55,8 +55,8 @@ export function RecoveredRevenueChart() {
           ))}
         </div>
 
-        <div className="rounded-xl border border-slate-100 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-          <div className="grid h-52 grid-cols-7 items-end gap-3">
+        <div className="min-w-0 rounded-xl border border-slate-100 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+          <div className="grid h-52 min-w-0 grid-cols-7 items-end gap-1 sm:gap-3">
             {weeklyRevenue.map((item) => {
               const barHeight = Math.max(
                 12,

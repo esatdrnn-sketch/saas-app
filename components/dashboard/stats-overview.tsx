@@ -52,7 +52,7 @@ const stats = [
 
 export function StatsOverview() {
   return (
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
+    <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 xl:grid-cols-4">
       {stats.map((stat) => {
         const Icon = stat.icon;
         const TrendIcon = stat.trend === "up" ? ArrowUpRight : ArrowDownRight;

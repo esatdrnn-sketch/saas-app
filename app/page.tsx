@@ -6,7 +6,7 @@ import { StatsOverview } from "@/components/dashboard/stats-overview";
 export default function HomePage() {
   return (
     <DashboardLayout>
-      <section>
+      <section className="min-w-0">
         <span className="inline-flex items-center rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300">
           Overview
         </span>
@@ -19,15 +19,15 @@ export default function HomePage() {
         </p>
       </section>
 
-      <section>
+      <section className="min-w-0">
         <StatsOverview />
       </section>
 
-      <section>
+      <section className="min-w-0">
         <RecoveredRevenueChart />
       </section>
 
-      <section>
+      <section className="min-w-0">
         <FailedPaymentsTable />
       </section>
     </DashboardLayout>

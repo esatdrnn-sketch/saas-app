@@ -76,13 +76,13 @@ export function SidebarNav({ open, setOpen }: SidebarNavProps) {
   return (
     <nav
       className={cn(
-        "fixed inset-y-0 left-0 z-30 flex shrink-0 flex-col border-r border-slate-200 bg-white p-2 shadow-sm transition-all duration-300 ease-in-out dark:border-slate-800 dark:bg-slate-900",
+        "flex h-screen shrink-0 flex-col border-r border-slate-200 bg-white p-2 shadow-sm transition-[width] duration-300 ease-in-out dark:border-slate-800 dark:bg-slate-900",
         open ? "w-64" : "w-16"
       )}
     >
       <TitleSection open={open} />
 
-      <div className="mb-8 flex-1 space-y-1 overflow-y-auto">
+      <div className="mb-2 min-h-0 flex-1 space-y-1 overflow-y-auto overflow-x-hidden">
         {mainNavItems.map((item) => (
           <NavOption
             key={item.label}
@@ -205,7 +205,7 @@ function ToggleClose({
     <button
       type="button"
       onClick={() => setOpen(!open)}
-      className="border-t border-slate-200 transition-colors hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800"
+      className="shrink-0 border-t border-slate-200 transition-colors hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800"
       aria-label={open ? "Sidebar'ı gizle" : "Sidebar'ı göster"}
     >
       <div className="flex items-center p-3">

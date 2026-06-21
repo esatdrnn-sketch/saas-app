@@ -10,16 +10,16 @@ type DashboardHeaderProps = {
 
 export function DashboardHeader({ isDark, setIsDark }: DashboardHeaderProps) {
   return (
-    <header className="sticky top-0 z-20 flex shrink-0 items-center justify-between gap-4 border-b border-slate-200 bg-white/95 px-6 py-4 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/95 md:px-8">
-      <div className="relative w-full max-w-xl">
+    <header className="flex shrink-0 flex-wrap items-center gap-3 border-b border-slate-200 bg-white/95 px-4 py-4 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/95 sm:gap-4 sm:px-6 md:px-8">
+      <div className="relative min-w-0 flex-1 basis-full sm:basis-auto sm:max-w-xl">
         <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400" />
         <Input
           placeholder="Müşteri, fatura veya kampanya ara..."
-          className="h-10 rounded-lg border-slate-200 bg-slate-50 pl-10 dark:border-slate-800 dark:bg-slate-950"
+          className="h-10 w-full rounded-lg border-slate-200 bg-slate-50 pl-10 dark:border-slate-800 dark:bg-slate-950"
         />
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex shrink-0 items-center gap-2 sm:gap-3">
         <button
           type="button"
           className="relative rounded-lg border border-slate-200 bg-white p-2 text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
