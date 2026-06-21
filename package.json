@@ -6,8 +6,7 @@
     "dev": "next dev",
     "build": "prisma generate && node scripts/migrate-deploy.mjs && next build",
     "start": "next start",
-    "seed": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' prisma/seed.ts",
-    "v0:add": "v0 add"
+    "seed": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' prisma/seed.ts"
   },
   "prisma": {
     "seed": "npm run seed"
@@ -42,7 +41,6 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "ts-node": "^10.9.2",
-    "typescript": "^5",
-    "v0": "^2.2.5"
+    "typescript": "^5"
   }
 }
