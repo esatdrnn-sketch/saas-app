@@ -1,5 +1,4 @@
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -28,7 +27,7 @@ const failedPayments = [
     customer: "Pixel Studio",
     amount: "₺890",
     reason: "Banka Reddi",
-    status: "2. WhatsApp Hatırlatması",
+    status: "1. E-posta Gönderildi",
     statusVariant: "secondary" as const,
   },
   {
@@ -49,25 +48,26 @@ const failedPayments = [
 
 export function FailedPaymentsTable() {
   return (
-    <Card className="border-slate-200 bg-white shadow-sm ring-0 rounded-none">
-      <CardHeader className="border-b border-slate-200 px-5 py-4 rounded-none">
-        <CardTitle className="text-base font-semibold text-slate-900">
+    <section className="border border-slate-100 bg-white shadow-sm rounded-none">
+      <div className="border-b border-slate-100 px-6 py-4">
+        <h3 className="text-base font-semibold text-slate-900">
           Recent Failed Payments &amp; Recovery Status
-        </CardTitle>
-        <p className="text-sm text-slate-500">
-          Son reddedilen ödemeler ve otomatik hatırlatma durumları
+        </h3>
+        <p className="mt-1 text-sm text-slate-500">
+          Son reddedilen ödemeler ve kurtarılma durumları
         </p>
-      </CardHeader>
-      <CardContent className="px-0 py-0">
+      </div>
+
+      <div className="overflow-x-auto">
         <Table>
           <TableHeader>
-            <TableRow className="border-slate-200 hover:bg-transparent">
-              <TableHead className="px-5 text-slate-500">Müşteri</TableHead>
+            <TableRow className="border-slate-100 hover:bg-transparent">
+              <TableHead className="px-6 text-slate-500">Müşteri</TableHead>
               <TableHead className="text-slate-500">Tutar</TableHead>
               <TableHead className="text-slate-500">
                 Reddedilme Nedeni
               </TableHead>
-              <TableHead className="px-5 text-slate-500">
+              <TableHead className="px-6 text-slate-500">
                 Otomatik Hatırlatma Durumu
               </TableHead>
             </TableRow>
@@ -76,16 +76,16 @@ export function FailedPaymentsTable() {
             {failedPayments.map((row) => (
               <TableRow
                 key={`${row.customer}-${row.amount}`}
-                className="border-slate-200"
+                className="border-slate-100"
               >
-                <TableCell className="px-5 font-medium text-slate-900">
+                <TableCell className="px-6 font-medium text-slate-900">
                   {row.customer}
                 </TableCell>
                 <TableCell className="font-medium text-slate-900">
                   {row.amount}
                 </TableCell>
                 <TableCell className="text-slate-600">{row.reason}</TableCell>
-                <TableCell className="px-5">
+                <TableCell className="px-6">
                   <Badge
                     variant={row.statusVariant}
                     className="rounded-none"
@@ -97,7 +97,7 @@ export function FailedPaymentsTable() {
             ))}
           </TableBody>
         </Table>
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }

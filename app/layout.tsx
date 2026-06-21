@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Churn Recovery & Dunning Dashboard",
+  title: "RecoverPanel | SaaS Churn Recovery & Dunning",
   description:
-    "SaaS churn recovery, failed payment tracking and dunning campaign overview",
+    "Failed payment recovery, dunning campaigns and retained revenue dashboard",
 };
 
 export default function RootLayout({

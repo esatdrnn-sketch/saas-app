@@ -6,7 +6,6 @@ import {
   RefreshCw,
   Wallet,
 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
 
 const stats = [
   {
@@ -34,7 +33,7 @@ const stats = [
     icon: RefreshCw,
   },
   {
-    label: "Recovery Rate",
+    label: "Recovery Rate (%)",
     sublabel: "Ödeme Kurtarma Başarı Oranı",
     value: "%64",
     change: "+4.1 puan",
@@ -45,7 +44,7 @@ const stats = [
 
 export function StatsOverview() {
   return (
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
       {stats.map((stat) => {
         const Icon = stat.icon;
         const TrendIcon = stat.trend === "up" ? ArrowUpRight : ArrowDownRight;
@@ -53,35 +52,31 @@ export function StatsOverview() {
           stat.trend === "up" ? "text-emerald-600" : "text-rose-600";
 
         return (
-          <Card
+          <div
             key={stat.label}
-            className="border-slate-200 bg-white shadow-sm ring-0 rounded-none"
+            className="border border-slate-100 bg-white p-5 shadow-sm rounded-none"
           >
-            <CardContent className="px-5 py-5">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-sm font-medium text-slate-900">
-                    {stat.label}
-                  </p>
-                  <p className="mt-0.5 text-xs text-slate-500">
-                    {stat.sublabel}
-                  </p>
-                  <p className="mt-3 text-2xl font-semibold tracking-tight text-slate-900">
-                    {stat.value}
-                  </p>
-                  <div
-                    className={`mt-2 flex items-center gap-1 text-xs font-medium ${trendColor}`}
-                  >
-                    <TrendIcon className="size-3.5" />
-                    {stat.change}
-                  </div>
-                </div>
-                <div className="flex size-11 shrink-0 items-center justify-center border border-indigo-100 bg-indigo-50 text-indigo-600 rounded-none">
-                  <Icon className="size-5" />
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-slate-900">
+                  {stat.label}
+                </p>
+                <p className="mt-0.5 text-xs text-slate-500">{stat.sublabel}</p>
+                <p className="mt-4 text-3xl font-semibold tracking-tight text-slate-900">
+                  {stat.value}
+                </p>
+                <div
+                  className={`mt-2 flex items-center gap-1 text-xs font-medium ${trendColor}`}
+                >
+                  <TrendIcon className="size-3.5 shrink-0" />
+                  <span>{stat.change}</span>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+              <div className="flex size-11 shrink-0 items-center justify-center border border-indigo-100 bg-indigo-50 text-indigo-600 rounded-none">
+                <Icon className="size-5" />
+              </div>
+            </div>
+          </div>
         );
       })}
     </div>
