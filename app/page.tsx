@@ -15,8 +15,10 @@ export default function HomePage() {
         <main className="flex-1 overflow-y-auto p-8">
           <div className="mx-auto flex max-w-7xl flex-col gap-8">
             <section>
-              <p className="text-sm font-medium text-indigo-600">Overview</p>
-              <h2 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900">
+              <span className="inline-flex items-center rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700">
+                Overview
+              </span>
+              <h2 className="mt-3 text-2xl font-semibold tracking-tight text-slate-900">
                 Dunning Dashboard
               </h2>
               <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-500">

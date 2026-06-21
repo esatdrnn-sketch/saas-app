@@ -52,9 +52,9 @@ const navItems = [
 
 export function SidebarNav() {
   return (
-    <aside className="fixed inset-y-0 left-0 z-30 flex w-64 flex-col border-r border-slate-200 bg-white">
-      <div className="border-b border-slate-200 px-6 py-6">
-        <div className="flex size-10 items-center justify-center bg-indigo-600 text-sm font-bold text-white rounded-none">
+    <aside className="fixed inset-y-0 left-0 z-30 flex w-64 flex-col border-r border-slate-200/80 bg-white">
+      <div className="border-b border-slate-200/80 px-6 py-6">
+        <div className="flex size-10 items-center justify-center rounded-xl bg-indigo-600 text-sm font-bold text-white shadow-sm shadow-indigo-600/20">
           RP
         </div>
         <h1 className="mt-4 text-lg font-semibold text-slate-900">
@@ -74,10 +74,10 @@ export function SidebarNav() {
               key={item.label}
               href={item.href}
               className={cn(
-                "block border px-4 py-3 transition-colors rounded-none",
+                "block rounded-xl px-4 py-3 transition-all duration-200",
                 item.active
-                  ? "border-indigo-200 bg-indigo-50 text-indigo-700"
-                  : "border-transparent text-slate-600 hover:border-slate-200 hover:bg-slate-50 hover:text-slate-900"
+                  ? "bg-indigo-600 text-white shadow-sm shadow-indigo-600/20"
+                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
               )}
             >
               <div className="flex items-center gap-3">
@@ -85,7 +85,14 @@ export function SidebarNav() {
                 <div>
                   <p className="text-sm font-medium">{item.label}</p>
                   {item.sublabel ? (
-                    <p className="text-xs text-slate-500">{item.sublabel}</p>
+                    <p
+                      className={cn(
+                        "text-xs",
+                        item.active ? "text-indigo-100" : "text-slate-500"
+                      )}
+                    >
+                      {item.sublabel}
+                    </p>
                   ) : null}
                 </div>
               </div>

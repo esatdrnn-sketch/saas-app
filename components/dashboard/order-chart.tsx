@@ -28,7 +28,7 @@ function formatAmount(value: number, currency: "TRY" | "USD") {
 
 export function RecoveredRevenueChart() {
   return (
-    <section className="border border-slate-100 bg-white shadow-sm rounded-none">
+    <section className="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm">
       <div className="border-b border-slate-100 px-6 py-4">
         <h3 className="text-base font-semibold text-slate-900">
           Haftalık Kurtarılan Ciro Analizi
@@ -39,11 +39,11 @@ export function RecoveredRevenueChart() {
       </div>
 
       <div className="grid gap-6 px-6 py-6 lg:grid-cols-[220px_minmax(0,1fr)]">
-        <div className="grid grid-cols-2 gap-3 border border-slate-100 bg-slate-50 p-4 lg:grid-cols-1 rounded-none">
+        <div className="grid grid-cols-2 gap-3 rounded-xl border border-slate-100 bg-slate-50 p-4 lg:grid-cols-1">
           {weeklyRevenue.map((item) => (
             <div
               key={`summary-${item.day}`}
-              className="border border-slate-100 bg-white px-3 py-2 rounded-none"
+              className="rounded-lg border border-slate-100 bg-white px-3 py-2"
             >
               <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
                 {item.day}
@@ -55,7 +55,7 @@ export function RecoveredRevenueChart() {
           ))}
         </div>
 
-        <div className="border border-slate-100 bg-white p-4 rounded-none">
+        <div className="rounded-xl border border-slate-100 bg-white p-4">
           <div className="grid h-52 grid-cols-7 items-end gap-3">
             {weeklyRevenue.map((item) => {
               const barHeight = Math.max(
@@ -70,7 +70,7 @@ export function RecoveredRevenueChart() {
                 >
                   <div className="flex h-40 w-full items-end justify-center">
                     <div
-                      className="w-full max-w-8 bg-indigo-500 rounded-none"
+                      className="w-full max-w-8 rounded-t-lg bg-gradient-to-t from-indigo-600 to-indigo-400 transition-all hover:from-indigo-700 hover:to-indigo-500"
                       style={{ height: `${barHeight}%` }}
                       title={formatAmount(item.value, item.currency)}
                     />

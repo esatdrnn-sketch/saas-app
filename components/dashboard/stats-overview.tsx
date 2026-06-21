@@ -54,7 +54,7 @@ export function StatsOverview() {
         return (
           <div
             key={stat.label}
-            className="border border-slate-100 bg-white p-5 shadow-sm rounded-none"
+            className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
           >
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
@@ -72,7 +72,7 @@ export function StatsOverview() {
                   <span>{stat.change}</span>
                 </div>
               </div>
-              <div className="flex size-11 shrink-0 items-center justify-center border border-indigo-100 bg-indigo-50 text-indigo-600 rounded-none">
+              <div className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-indigo-100 bg-indigo-50 text-indigo-600">
                 <Icon className="size-5" />
               </div>
             </div>

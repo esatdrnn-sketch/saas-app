@@ -48,7 +48,7 @@ const failedPayments = [
 
 export function FailedPaymentsTable() {
   return (
-    <section className="border border-slate-100 bg-white shadow-sm rounded-none">
+    <section className="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm">
       <div className="border-b border-slate-100 px-6 py-4">
         <h3 className="text-base font-semibold text-slate-900">
           Recent Failed Payments &amp; Recovery Status
@@ -76,7 +76,7 @@ export function FailedPaymentsTable() {
             {failedPayments.map((row) => (
               <TableRow
                 key={`${row.customer}-${row.amount}`}
-                className="border-slate-100"
+                className="border-slate-100 transition-colors hover:bg-slate-50/80"
               >
                 <TableCell className="px-6 font-medium text-slate-900">
                   {row.customer}
@@ -86,12 +86,7 @@ export function FailedPaymentsTable() {
                 </TableCell>
                 <TableCell className="text-slate-600">{row.reason}</TableCell>
                 <TableCell className="px-6">
-                  <Badge
-                    variant={row.statusVariant}
-                    className="rounded-none"
-                  >
-                    {row.status}
-                  </Badge>
+                  <Badge variant={row.statusVariant}>{row.status}</Badge>
                 </TableCell>
               </TableRow>
             ))}
