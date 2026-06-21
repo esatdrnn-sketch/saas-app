@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 
 export function RecoveryProgressCard() {
   return (
-    <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
+    <section className="rounded-[28px] border border-slate-200/80 bg-white p-6 shadow-sm">
       <h3 className="text-lg font-bold text-slate-900">Recovery Rate (%)</h3>
       <p className="mt-1 text-sm text-slate-500">
         Ödeme Kurtarma Başarı Oranı
@@ -16,7 +16,7 @@ export function RecoveryProgressCard() {
               cy="60"
               r="48"
               fill="none"
-              stroke="#e2e8f0"
+              stroke="#e5e7eb"
               strokeWidth="10"
               strokeDasharray="8 10"
             />
@@ -25,7 +25,7 @@ export function RecoveryProgressCard() {
               cy="60"
               r="48"
               fill="none"
-              stroke="#2563eb"
+              stroke="#015021"
               strokeWidth="10"
               strokeLinecap="round"
               strokeDasharray={`${64 * 3.015} 999`}
@@ -39,7 +39,7 @@ export function RecoveryProgressCard() {
 
         <div className="mt-6 flex w-full flex-wrap justify-center gap-4 text-xs text-slate-500">
           <span className="inline-flex items-center gap-2">
-            <span className="size-2.5 rounded-full bg-blue-600" />
+            <span className="size-2.5 rounded-full bg-[#015021]" />
             Kurtarıldı
           </span>
           <span className="inline-flex items-center gap-2">
@@ -58,9 +58,9 @@ export function RecoveryProgressCard() {
 
 export function DunningReminderCard() {
   return (
-    <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
+    <section className="rounded-[28px] border border-slate-200/80 bg-white p-6 shadow-sm">
       <h3 className="text-lg font-bold text-slate-900">Otomatik Hatırlatma</h3>
-      <div className="mt-5 rounded-xl bg-slate-50 p-5">
+      <div className="mt-5 rounded-[22px] bg-[#f5f7f6] p-5">
         <h4 className="font-semibold text-slate-900">
           Failed Payment Follow-up
         </h4>
@@ -69,7 +69,7 @@ export function DunningReminderCard() {
         </p>
         <button
           type="button"
-          className="mt-5 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+          className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#015021] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#013a19]"
         >
           Kampanyayı Başlat
         </button>

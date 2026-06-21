@@ -17,7 +17,7 @@ const failedPayments = [
     status: "Kurtarıldı",
     tone: "success" as const,
     initials: "NA",
-    color: "bg-blue-100 text-blue-700",
+    color: "bg-emerald-100 text-emerald-700",
   },
   {
     customer: "Pixel Studio",
@@ -60,7 +60,7 @@ function statusClass(tone: "success" | "pending" | "danger") {
 
 export function FailedPaymentsTable() {
   return (
-    <section className="min-w-0 rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
+    <section className="min-w-0 rounded-[28px] border border-slate-200/80 bg-white p-6 shadow-sm">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h3 className="text-lg font-bold text-slate-900">
@@ -72,7 +72,7 @@ export function FailedPaymentsTable() {
         </div>
         <button
           type="button"
-          className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+          className="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
         >
           + Yeni Kayıt
         </button>
@@ -82,12 +82,12 @@ export function FailedPaymentsTable() {
         {failedPayments.map((row) => (
           <div
             key={`${row.customer}-${row.amount}`}
-            className="flex flex-col gap-4 rounded-xl border border-slate-100 bg-slate-50/50 p-4 sm:flex-row sm:items-center"
+            className="flex flex-col gap-4 rounded-[22px] border border-slate-100 bg-[#fcfdfc] p-4 sm:flex-row sm:items-center"
           >
             <div className="flex min-w-0 flex-1 items-center gap-4">
               <div
                 className={cn(
-                  "grid size-12 shrink-0 place-content-center rounded-xl text-sm font-bold",
+                  "grid size-12 shrink-0 place-content-center rounded-full text-sm font-bold",
                   row.color
                 )}
               >
@@ -105,7 +105,7 @@ export function FailedPaymentsTable() {
 
             <span
               className={cn(
-                "inline-flex w-fit shrink-0 rounded-lg border px-3 py-1 text-xs font-semibold",
+                "inline-flex w-fit shrink-0 rounded-full border px-3 py-1 text-xs font-semibold",
                 statusClass(row.tone)
               )}
             >

@@ -12,7 +12,7 @@ export default function HomePage() {
     <DashboardLayout>
       <section className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="min-w-0">
-          <span className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-600">
+          <span className="inline-flex items-center rounded-full bg-[#ecf7ef] px-3 py-1 text-xs font-semibold text-[#015021]">
             Overview
           </span>
           <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
@@ -28,13 +28,13 @@ export default function HomePage() {
         <div className="flex shrink-0 flex-wrap gap-3">
           <button
             type="button"
-            className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+            className="rounded-full bg-[#015021] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#013a19]"
           >
             + Yeni Kampanya
           </button>
           <button
             type="button"
-            className="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+            className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
           >
             Rapor İndir
           </button>

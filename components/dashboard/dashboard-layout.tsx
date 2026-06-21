@@ -10,7 +10,7 @@ type DashboardLayoutProps = {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-slate-50 text-slate-900">
+    <div className="flex h-screen w-full overflow-hidden bg-[#f5f7f6] text-slate-900">
       <SidebarNav />
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
