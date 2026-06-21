@@ -28,34 +28,34 @@ function formatAmount(value: number, currency: "TRY" | "USD") {
 
 export function RecoveredRevenueChart() {
   return (
-    <section className="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm">
-      <div className="border-b border-slate-100 px-6 py-4">
-        <h3 className="text-base font-semibold text-slate-900">
+    <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div className="border-b border-slate-100 px-6 py-4 dark:border-slate-800">
+        <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
           Haftalık Kurtarılan Ciro Analizi
         </h3>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
           Son 7 gün — TL ve USD bazında kurtarılan gelir (mock veri)
         </p>
       </div>
 
       <div className="grid gap-6 px-6 py-6 lg:grid-cols-[220px_minmax(0,1fr)]">
-        <div className="grid grid-cols-2 gap-3 rounded-xl border border-slate-100 bg-slate-50 p-4 lg:grid-cols-1">
+        <div className="grid grid-cols-2 gap-3 rounded-xl border border-slate-100 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950 lg:grid-cols-1">
           {weeklyRevenue.map((item) => (
             <div
               key={`summary-${item.day}`}
-              className="rounded-lg border border-slate-100 bg-white px-3 py-2"
+              className="rounded-lg border border-slate-100 bg-white px-3 py-2 dark:border-slate-800 dark:bg-slate-900"
             >
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
                 {item.day}
               </p>
-              <p className="mt-1 text-sm font-semibold text-slate-900">
+              <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
                 {formatAmount(item.value, item.currency)}
               </p>
             </div>
           ))}
         </div>
 
-        <div className="rounded-xl border border-slate-100 bg-white p-4">
+        <div className="rounded-xl border border-slate-100 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
           <div className="grid h-52 grid-cols-7 items-end gap-3">
             {weeklyRevenue.map((item) => {
               const barHeight = Math.max(

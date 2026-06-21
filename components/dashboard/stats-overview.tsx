@@ -15,6 +15,8 @@ const stats = [
     change: "+18.2% bu ay",
     trend: "up" as const,
     icon: Wallet,
+    iconBg: "bg-indigo-50 dark:bg-indigo-900/20",
+    iconColor: "text-indigo-600 dark:text-indigo-400",
   },
   {
     label: "Failed Invoices Today",
@@ -23,6 +25,8 @@ const stats = [
     change: "+3 dünden",
     trend: "down" as const,
     icon: CreditCard,
+    iconBg: "bg-rose-50 dark:bg-rose-900/20",
+    iconColor: "text-rose-600 dark:text-rose-400",
   },
   {
     label: "Active Dunning Campaigns",
@@ -31,6 +35,8 @@ const stats = [
     change: "2 yeni başlatıldı",
     trend: "up" as const,
     icon: RefreshCw,
+    iconBg: "bg-violet-50 dark:bg-violet-900/20",
+    iconColor: "text-violet-600 dark:text-violet-400",
   },
   {
     label: "Recovery Rate (%)",
@@ -39,43 +45,44 @@ const stats = [
     change: "+4.1 puan",
     trend: "up" as const,
     icon: Percent,
+    iconBg: "bg-emerald-50 dark:bg-emerald-900/20",
+    iconColor: "text-emerald-600 dark:text-emerald-400",
   },
 ];
 
 export function StatsOverview() {
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
       {stats.map((stat) => {
         const Icon = stat.icon;
         const TrendIcon = stat.trend === "up" ? ArrowUpRight : ArrowDownRight;
         const trendColor =
-          stat.trend === "up" ? "text-emerald-600" : "text-rose-600";
+          stat.trend === "up"
+            ? "text-emerald-600 dark:text-emerald-400"
+            : "text-rose-600 dark:text-rose-400";
 
         return (
           <div
             key={stat.label}
-            className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
+            className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md dark:border-slate-800 dark:bg-slate-900"
           >
-            <div className="flex items-start justify-between gap-4">
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-slate-900">
-                  {stat.label}
-                </p>
-                <p className="mt-0.5 text-xs text-slate-500">{stat.sublabel}</p>
-                <p className="mt-4 text-3xl font-semibold tracking-tight text-slate-900">
-                  {stat.value}
-                </p>
-                <div
-                  className={`mt-2 flex items-center gap-1 text-xs font-medium ${trendColor}`}
-                >
-                  <TrendIcon className="size-3.5 shrink-0" />
-                  <span>{stat.change}</span>
-                </div>
+            <div className="mb-4 flex items-center justify-between">
+              <div className={`rounded-lg p-2 ${stat.iconBg}`}>
+                <Icon className={`size-5 ${stat.iconColor}`} />
               </div>
-              <div className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-indigo-100 bg-indigo-50 text-indigo-600">
-                <Icon className="size-5" />
-              </div>
+              <TrendIcon className={`size-4 ${trendColor}`} />
             </div>
+
+            <h3 className="mb-1 text-sm font-medium text-slate-600 dark:text-slate-400">
+              {stat.label}
+            </h3>
+            <p className="mb-1 text-xs text-slate-500 dark:text-slate-500">
+              {stat.sublabel}
+            </p>
+            <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+              {stat.value}
+            </p>
+            <p className={`mt-1 text-sm ${trendColor}`}>{stat.change}</p>
           </div>
         );
       })}
