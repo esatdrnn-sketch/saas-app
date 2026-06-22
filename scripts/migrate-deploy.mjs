@@ -2,11 +2,6 @@ import { execSync } from "node:child_process";
 import { config } from "dotenv";
 config();
 
-/**
- * Prisma 7 + Neon: migrate deploy çalıştırır.
- * P1002 (advisory lock timeout) → Neon'un serverless uyku durumundan kaynaklanır;
- * migration zaten uygulanmışsa build'i durdurmak yerine uyarı verir.
- */
 const migrationUrl = process.env.DIRECT_URL ?? process.env.DATABASE_URL;
 
 if (!migrationUrl) {
@@ -15,20 +10,28 @@ if (!migrationUrl) {
 }
 
 try {
-  execSync("npx prisma migrate deploy", {
-    stdio: "inherit",
+  // stdio: "pipe" ile çıktıyı yakala, başarılı olursa ekrana bas
+  const result = execSync("npx prisma migrate deploy", {
+    stdio: "pipe",
     env: { ...process.env, DATABASE_URL: migrationUrl },
   });
+  process.stdout.write(result);
 } catch (err) {
-  const msg = err?.stderr?.toString() ?? err?.message ?? String(err);
-  if (msg.includes("P1002") || msg.includes("advisory lock")) {
+  const out = err?.stdout?.toString() ?? "";
+  const errOut = err?.stderr?.toString() ?? "";
+  const combined = out + " " + errOut;
+
+  // Çıktıyı her durumda ekrana bas
+  if (out) process.stdout.write(out);
+  if (errOut) process.stderr.write(errOut);
+
+  if (combined.includes("P1002") || combined.includes("advisory lock") || combined.includes("pg_advisory_lock")) {
     console.warn(
-      "[migrate-deploy] Advisory lock timeout (Neon uyku modu). " +
-      "Migration zaten uygulanmışsa bu uyarı önemli değil."
+      "\n[migrate-deploy] ⚠ Advisory lock timeout (Neon uyku). " +
+      "Migration zaten uygulanmışsa önemsiz — devam ediliyor."
     );
     process.exit(0);
   }
-  // Başka bir hata: build'i durdur
-  console.error("[migrate-deploy] Migration başarısız:", msg);
+
   process.exit(1);
 }
