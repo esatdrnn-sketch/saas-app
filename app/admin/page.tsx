@@ -40,7 +40,7 @@ export default async function AdminPage() {
       },
     }),
     prisma.cancellationEvent.findMany({ select: { reason: true, action: true } }),
-    prisma.tenant.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
+    prisma.tenant.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true, loginKey: true } }),
   ]);
 
   const pastDueCount   = subscriptions.filter((s) => s.status === "PAST_DUE").length;
@@ -91,6 +91,46 @@ export default async function AdminPage() {
             <p className={styles.statHint}>PAST_DUE abonelik</p>
           </div>
         </div>
+
+        {/* Tenant listesi + login key'leri */}
+        <section className={`${styles.panel} ${styles.panelSpaced}`}>
+          <div className={styles.panelHead}>
+            <h2 className={styles.panelTitle}>Tenant Giriş Anahtarları</h2>
+            <span className={styles.count}>{tenants.length} tenant</span>
+          </div>
+          <div className={styles.tableWrap}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>Tenant Adı</th>
+                  <th>Giriş Anahtarı</th>
+                  <th>Dashboard</th>
+                </tr>
+              </thead>
+              <tbody>
+                {tenants.map((t) => (
+                  <tr key={t.id}>
+                    <td style={{ fontWeight: 600 }}>{t.name}</td>
+                    <td className={styles.mono}>{t.loginKey}</td>
+                    <td>
+                      <div className={styles.actionCell}>
+                        <CopyPortalLink url={t.loginKey} />
+                        <a
+                          href={`${appUrl}/tenant/dashboard`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className={styles.btnLink}
+                        >
+                          Dashboard →
+                        </a>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
 
         {/* Onboarding */}
         <section className={`${styles.panel} ${styles.panelSpaced}`}>
