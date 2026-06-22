@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 function formatCardNumber(v: string) {
   return v.replace(/\D/g, "").slice(0, 16).replace(/(.{4})/g, "$1 ").trim();
@@ -18,13 +18,22 @@ export default function TestCardUpdatePage() {
   const [cvc, setCvc] = useState("");
   const [done, setDone] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [returnToken, setReturnToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setReturnToken(params.get("token"));
+  }, []);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
-      setDone(true);
+      const dest = returnToken
+        ? `/card-updated?token=${encodeURIComponent(returnToken)}`
+        : "/card-updated";
+      window.location.href = dest;
     }, 1200);
   }
 
@@ -56,26 +65,7 @@ export default function TestCardUpdatePage() {
           </p>
         </div>
 
-        {done ? (
-          <div className="bg-white border border-slate-200 p-8 text-center">
-            <div className="mx-auto mb-5 w-14 h-14 flex items-center justify-center bg-green-100">
-              <svg className="w-7 h-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <h2 className="text-lg font-bold text-slate-900 mb-2">Kart başarıyla güncellendi</h2>
-            <p className="text-sm text-slate-500 mb-6">
-              Ödeme bilgileriniz kaydedildi. Aboneliğiniz aktif olarak devam edecek.
-            </p>
-            <button
-              type="button"
-              onClick={() => window.history.back()}
-              className="text-xs text-indigo-600 underline underline-offset-2"
-            >
-              ← Geri dön
-            </button>
-          </div>
-        ) : (
+        {!done && (
           <form onSubmit={handleSubmit} className="bg-white border border-slate-200">
             {/* iyzico benzeri banner */}
             <div className="border-b border-slate-200 bg-slate-50 px-6 py-3 flex items-center gap-2">
@@ -162,6 +152,7 @@ export default function TestCardUpdatePage() {
           </form>
         )}
       </main>
+
 
       <footer className="pb-6 text-center text-xs text-slate-400">
         RecoverPanel · Geliştirme / Test Ortamı

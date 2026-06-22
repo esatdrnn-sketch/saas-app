@@ -48,10 +48,11 @@ function baseLayout(content: string): string {
 </html>`;
 }
 
-function attempt1Html(businessName: string, updateUrl: string): string {
+function attempt1Html(businessName: string, updateUrl: string, plan = ""): string {
   return baseLayout(`
     <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:#4f46e5;text-transform:uppercase;letter-spacing:1px;">Ödeme Bildirimi</p>
     <h1 style="margin:0 0 16px;font-size:24px;font-weight:700;color:#0f172a;">Ödemeniz alınamadı</h1>
+    ${plan}
     <p style="margin:0 0 24px;font-size:15px;color:#475569;line-height:1.6;">
       Merhaba,<br><br>
       <strong>${businessName}</strong> aboneliğinizin ödemesi gerçekleştirilemedi.
@@ -73,10 +74,11 @@ function attempt1Html(businessName: string, updateUrl: string): string {
   `);
 }
 
-function attempt2Html(businessName: string, updateUrl: string): string {
+function attempt2Html(businessName: string, updateUrl: string, plan = ""): string {
   return baseLayout(`
     <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:#f59e0b;text-transform:uppercase;letter-spacing:1px;">Hatırlatma</p>
     <h1 style="margin:0 0 16px;font-size:24px;font-weight:700;color:#0f172a;">Aboneliğiniz askıya alınmak üzere</h1>
+    ${plan}
     <p style="margin:0 0 24px;font-size:15px;color:#475569;line-height:1.6;">
       Merhaba,<br><br>
       <strong>${businessName}</strong> aboneliğinizin ödemesi hâlâ alınamadı.
@@ -97,10 +99,11 @@ function attempt2Html(businessName: string, updateUrl: string): string {
   `);
 }
 
-function attempt3Html(businessName: string, updateUrl: string): string {
+function attempt3Html(businessName: string, updateUrl: string, plan = ""): string {
   return baseLayout(`
     <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:#ef4444;text-transform:uppercase;letter-spacing:1px;">Son Uyarı</p>
     <h1 style="margin:0 0 16px;font-size:24px;font-weight:700;color:#0f172a;">Aboneliğiniz bugün iptal ediliyor</h1>
+    ${plan}
     <p style="margin:0 0 24px;font-size:15px;color:#475569;line-height:1.6;">
       Merhaba,<br><br>
       <strong>${businessName}</strong> aboneliğinize ait ödeme 7 gündür alınamıyor.
@@ -129,6 +132,31 @@ export interface DunningEmailInput {
   businessName: string;
   updateUrl: string;
   attemptNumber: 1 | 2 | 3;
+  planName?: string | null;
+  amount?: number | null;
+  currency?: string | null;
+}
+
+function planRow(planName?: string | null, amount?: number | null, currency?: string | null): string {
+  if (!planName && !amount) return "";
+  const parts: string[] = [];
+  if (planName) parts.push(`<strong>${planName}</strong>`);
+  if (amount != null) {
+    const formatted = new Intl.NumberFormat("tr-TR", {
+      style: "currency",
+      currency: currency ?? "TRY",
+    }).format(amount);
+    parts.push(formatted + " / ay");
+  }
+  return `
+    <table cellpadding="0" cellspacing="0" style="margin:0 0 20px;background:#f8fafc;border:1px solid #e2e8f0;width:100%;">
+      <tr>
+        <td style="padding:10px 14px;">
+          <span style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;">Abonelik</span>
+          <p style="margin:4px 0 0;font-size:15px;color:#0f172a;">${parts.join(" · ")}</p>
+        </td>
+      </tr>
+    </table>`;
 }
 
 const SUBJECTS: Record<number, string> = {
@@ -139,11 +167,11 @@ const SUBJECTS: Record<number, string> = {
 
 const TEMPLATES: Record<
   number,
-  (businessName: string, updateUrl: string) => string
+  (businessName: string, updateUrl: string, planName?: string | null, amount?: number | null, currency?: string | null) => string
 > = {
-  1: attempt1Html,
-  2: attempt2Html,
-  3: attempt3Html,
+  1: (b, u, p, a, c) => attempt1Html(b, u, planRow(p, a, c)),
+  2: (b, u, p, a, c) => attempt2Html(b, u, planRow(p, a, c)),
+  3: (b, u, p, a, c) => attempt3Html(b, u, planRow(p, a, c)),
 };
 
 export async function sendDunningEmail(
@@ -151,7 +179,13 @@ export async function sendDunningEmail(
 ): Promise<void> {
   const client = getClient();
   const subject = SUBJECTS[input.attemptNumber];
-  const html = TEMPLATES[input.attemptNumber](input.businessName, input.updateUrl);
+  const html = TEMPLATES[input.attemptNumber](
+    input.businessName,
+    input.updateUrl,
+    input.planName,
+    input.amount,
+    input.currency,
+  );
 
   if (!client) {
     console.log(

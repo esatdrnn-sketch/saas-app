@@ -8,6 +8,7 @@ import styles from "./admin.module.css";
 import LogoutButton from "./LogoutButton";
 import AdminClient from "./AdminClient";
 import DunningButton from "./DunningButton";
+import CopyPortalLink from "./CopyPortalLink";
 
 export const dynamic = "force-dynamic";
 
@@ -151,9 +152,7 @@ export default async function AdminPage() {
                         <td>
                           <div className={styles.actionCell}>
                             <DunningButton subscriptionId={sub.id} disabled={!canDunning} />
-                            <a href={portalUrl} target="_blank" rel="noreferrer" className={styles.btnLink}>
-                              Portal
-                            </a>
+                            <CopyPortalLink url={portalUrl} />
                           </div>
                         </td>
                       </tr>

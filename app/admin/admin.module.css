@@ -487,11 +487,24 @@
   font-weight: 600;
   text-decoration: none;
   white-space: nowrap;
+  cursor: pointer;
   transition: border-color 0.15s;
 }
 
 .btnLink:hover {
   border-color: #9ca3af;
+}
+
+.btnLinkCopied {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1.5px solid #059669;
+  background: #ecfdf5;
+  color: #059669;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: default;
 }
 
 .actionCell {

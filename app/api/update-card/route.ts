@@ -47,11 +47,10 @@ export async function POST(req: NextRequest) {
   try {
     const { checkoutUrl } = await initSubscriptionCardUpdate({
       subscriptionReferenceCode: subscription.iyzicoSubRef,
-      callbackUrl: `${appUrl}/api/webhooks/iyzico`,
+      callbackUrl: `${appUrl}/card-updated?token=${encodeURIComponent(token)}`,
     });
     return NextResponse.json({ checkoutUrl });
   } catch {
-    // iyzico erişilemez veya hata döndürdüyse simülasyon moduna düş
-    return NextResponse.json({ checkoutUrl: "/test-card-update" });
+    return NextResponse.json({ checkoutUrl: `/test-card-update?token=${encodeURIComponent(token)}` });
   }
 }

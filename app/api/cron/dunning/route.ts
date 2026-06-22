@@ -24,6 +24,9 @@ export async function GET(req: NextRequest) {
       id: true,
       customerEmail: true,
       updateToken: true,
+      planName: true,
+      amount: true,
+      currency: true,
       tenant: { select: { name: true } },
       dunningAttempts: {
         orderBy: { attemptNumber: "desc" },
@@ -51,6 +54,9 @@ export async function GET(req: NextRequest) {
         businessName: sub.tenant.name,
         updateUrl,
         attemptNumber: 2,
+        planName: sub.planName,
+        amount: sub.amount,
+        currency: sub.currency,
       }).catch((e) => console.error("[Cron] 2. e-posta hatası:", e));
       await prisma.dunningAttempt.create({
         data: { subscriptionId: sub.id, attemptNumber: 2, emailTo: sub.customerEmail },
@@ -65,6 +71,9 @@ export async function GET(req: NextRequest) {
         businessName: sub.tenant.name,
         updateUrl,
         attemptNumber: 3,
+        planName: sub.planName,
+        amount: sub.amount,
+        currency: sub.currency,
       }).catch((e) => console.error("[Cron] 3. e-posta hatası:", e));
       await prisma.dunningAttempt.create({
         data: { subscriptionId: sub.id, attemptNumber: 3, emailTo: sub.customerEmail },

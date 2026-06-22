@@ -62,8 +62,12 @@ export async function POST(req: NextRequest) {
     where: { iyzicoSubRef: webhook.subscriptionReferenceCode },
     select: {
       id: true,
+      status: true,
       customerPhone: true,
       customerEmail: true,
+      planName: true,
+      amount: true,
+      currency: true,
       tenant: { select: { name: true } },
     },
   });
@@ -76,6 +80,11 @@ export async function POST(req: NextRequest) {
   }
 
   if (webhook.event === "payment.failed") {
+    // İdempotency: zaten PAST_DUE ise tekrar işleme
+    if (subscription.status === "PAST_DUE") {
+      return NextResponse.json({ received: true, skipped: true, reason: "already_past_due" });
+    }
+
     const updateToken = generateUpdateToken();
     const updateUrl = buildUpdatePaymentUrl(updateToken);
 
@@ -84,7 +93,6 @@ export async function POST(req: NextRequest) {
       data: { status: "PAST_DUE", updateToken },
     });
 
-    // WhatsApp / SMS bildirimi (hata olsa da devam et)
     await sendDunningMessage(
       subscription.customerPhone,
       subscription.tenant.name,
@@ -93,7 +101,6 @@ export async function POST(req: NextRequest) {
       console.error("[Webhook] WhatsApp gönderim hatası:", err)
     );
 
-    // E-posta: 1. deneme (hata olsa da webhook başarılı sayılır)
     if (subscription.customerEmail) {
       try {
         await sendDunningEmail({
@@ -101,6 +108,9 @@ export async function POST(req: NextRequest) {
           businessName: subscription.tenant.name,
           updateUrl,
           attemptNumber: 1,
+          planName: subscription.planName,
+          amount: subscription.amount,
+          currency: subscription.currency,
         });
 
         await prisma.dunningAttempt.create({
@@ -123,6 +133,9 @@ export async function POST(req: NextRequest) {
 
   // card.updated → PAST_DUE'dan kurtarıldı
   if (webhook.event === "card.updated") {
+    if (subscription.status === "RECOVERED") {
+      return NextResponse.json({ received: true, skipped: true, reason: "already_recovered" });
+    }
     await prisma.subscription.update({
       where: { id: subscription.id },
       data: { status: "RECOVERED" },
@@ -134,6 +147,9 @@ export async function POST(req: NextRequest) {
   }
 
   // payment.success
+  if (subscription.status === "ACTIVE") {
+    return NextResponse.json({ received: true, skipped: true, reason: "already_active" });
+  }
   await prisma.subscription.update({
     where: { id: subscription.id },
     data: { status: "ACTIVE" },
