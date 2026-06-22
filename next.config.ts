@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ["iyzipay"],
+  serverExternalPackages: ["iyzipay", "twilio"],
 };
 
 export default nextConfig;
