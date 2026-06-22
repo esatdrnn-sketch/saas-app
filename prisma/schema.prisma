@@ -19,6 +19,9 @@ model Subscription {
   tenant              Tenant               @relation(fields: [tenantId], references: [id])
   customerPhone       String
   customerEmail       String?
+  planName            String?
+  amount              Float?
+  currency            String               @default("TRY")
   status              SubscriptionStatus   @default(ACTIVE)
   iyzicoSubRef        String?              @unique
   updateToken         String               @unique @default(uuid())

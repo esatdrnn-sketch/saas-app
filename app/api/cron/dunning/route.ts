@@ -3,10 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { buildUpdatePaymentUrl } from "@/lib/app-url";
 import { sendDunningEmail } from "@/lib/email";
 
-// Vercel Cron bu endpoint'i çağırırken CRON_SECRET header'ı gönderir
 function isAuthorized(req: NextRequest): boolean {
   const secret = process.env.CRON_SECRET;
-  if (!secret) return true; // geliştirme ortamında serbest
+  if (!secret) return true;
   return req.headers.get("authorization") === `Bearer ${secret}`;
 }
 
@@ -19,7 +18,6 @@ export async function GET(req: NextRequest) {
 
   const now = new Date();
 
-  // PAST_DUE abonelikleri + mevcut deneme sayıları
   const pastDueSubscriptions = await prisma.subscription.findMany({
     where: { status: "PAST_DUE", customerEmail: { not: null } },
     select: {
@@ -36,6 +34,7 @@ export async function GET(req: NextRequest) {
   });
 
   let sent = 0;
+  let autoCancelled = 0;
 
   for (const sub of pastDueSubscriptions) {
     if (!sub.customerEmail) continue;
@@ -43,49 +42,48 @@ export async function GET(req: NextRequest) {
     const lastAttempt = sub.dunningAttempts[0];
     if (!lastAttempt) continue;
 
-    const daysSinceLastAttempt =
-      (now.getTime() - lastAttempt.sentAt.getTime()) / DAY_MS;
-
+    const daysSince = (now.getTime() - lastAttempt.sentAt.getTime()) / DAY_MS;
     const updateUrl = buildUpdatePaymentUrl(sub.updateToken);
 
-    // 2. deneme: 1. denemeden 3+ gün sonra
-    if (lastAttempt.attemptNumber === 1 && daysSinceLastAttempt >= 3) {
+    if (lastAttempt.attemptNumber === 1 && daysSince >= 3) {
       await sendDunningEmail({
         to: sub.customerEmail,
         businessName: sub.tenant.name,
         updateUrl,
         attemptNumber: 2,
-      });
+      }).catch((e) => console.error("[Cron] 2. e-posta hatası:", e));
       await prisma.dunningAttempt.create({
-        data: {
-          subscriptionId: sub.id,
-          attemptNumber: 2,
-          emailTo: sub.customerEmail,
-        },
+        data: { subscriptionId: sub.id, attemptNumber: 2, emailTo: sub.customerEmail },
       });
       sent++;
       continue;
     }
 
-    // 3. deneme: 2. denemeden 4+ gün sonra (toplam 7. gün)
-    if (lastAttempt.attemptNumber === 2 && daysSinceLastAttempt >= 4) {
+    if (lastAttempt.attemptNumber === 2 && daysSince >= 4) {
       await sendDunningEmail({
         to: sub.customerEmail,
         businessName: sub.tenant.name,
         updateUrl,
         attemptNumber: 3,
-      });
+      }).catch((e) => console.error("[Cron] 3. e-posta hatası:", e));
       await prisma.dunningAttempt.create({
-        data: {
-          subscriptionId: sub.id,
-          attemptNumber: 3,
-          emailTo: sub.customerEmail,
-        },
+        data: { subscriptionId: sub.id, attemptNumber: 3, emailTo: sub.customerEmail },
       });
       sent++;
+      continue;
+    }
+
+    // 3. deneme gönderildikten 1+ gün sonra hâlâ PAST_DUE → otomatik iptal
+    if (lastAttempt.attemptNumber === 3 && daysSince >= 1) {
+      await prisma.subscription.update({
+        where: { id: sub.id },
+        data: { status: "CANCELLED" },
+      });
+      console.log(`[Cron] Otomatik iptal: ${sub.id} (3. deneme + ${Math.floor(daysSince)}g geçti)`);
+      autoCancelled++;
     }
   }
 
-  console.log(`[Dunning Cron] ${sent} e-posta gönderildi.`);
-  return NextResponse.json({ ok: true, sent });
+  console.log(`[Dunning Cron] ${sent} e-posta, ${autoCancelled} otomatik iptal.`);
+  return NextResponse.json({ ok: true, sent, autoCancelled });
 }
