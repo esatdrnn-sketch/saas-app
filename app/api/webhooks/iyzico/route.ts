@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
+  type IyzicoRawPayload,
   parseIyzicoWebhook,
   verifyIyzicoWebhookSignature,
 } from "@/lib/iyzico-webhook";
@@ -9,23 +10,10 @@ import { buildUpdatePaymentUrl } from "@/lib/app-url";
 import { sendDunningMessage } from "@/lib/whatsapp";
 
 export async function POST(req: NextRequest) {
-  const rawBody = await req.text();
-  const signature = req.headers.get("x-iyzico-signature");
-
-  if (!verifyIyzicoWebhookSignature(rawBody, signature)) {
-    console.warn(
-      `[iyzico Webhook] İmza doğrulama başarısız. IP: ${req.headers.get("x-forwarded-for") ?? "bilinmiyor"}, Signature: ${signature}`
-    );
-    return NextResponse.json(
-      { error: "Geçersiz webhook imzası." },
-      { status: 401 }
-    );
-  }
-
-  let body: unknown;
+  let rawPayload: IyzicoRawPayload;
 
   try {
-    body = JSON.parse(rawBody);
+    rawPayload = (await req.json()) as IyzicoRawPayload;
   } catch {
     return NextResponse.json(
       { error: "Geçersiz JSON gövdesi." },
@@ -33,9 +21,39 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const webhook = parseIyzicoWebhook(body);
+  const secretKey = process.env.IYZICO_SECRET_KEY;
+
+  if (!secretKey) {
+    console.error("[iyzico Webhook] IYZICO_SECRET_KEY tanımlı değil.");
+    return NextResponse.json(
+      { error: "Sunucu yapılandırma hatası." },
+      { status: 500 }
+    );
+  }
+
+  // iyzico imza doğrulama: SHA-1(secretKey + iyziReferenceCode + iyziEventType) → base64
+  if (!verifyIyzicoWebhookSignature(rawPayload, secretKey)) {
+    console.warn(
+      `[iyzico Webhook] İmza doğrulama başarısız. IP: ${req.headers.get("x-forwarded-for") ?? "bilinmiyor"}`,
+      {
+        iyziEventType: rawPayload.iyziEventType,
+        iyziReferenceCode: rawPayload.iyziReferenceCode,
+        iyziSignature: rawPayload.iyziSignature,
+      }
+    );
+    return NextResponse.json(
+      { error: "Geçersiz webhook imzası." },
+      { status: 401 }
+    );
+  }
+
+  const webhook = parseIyzicoWebhook(rawPayload);
 
   if (!webhook) {
+    // Tanımadığımız event tipi — 200 döndürüyoruz ki iyzico tekrar göndermesın
+    console.log(
+      `[iyzico Webhook] Tanımadık event atlandı: ${rawPayload.iyziEventType}`
+    );
     return NextResponse.json({ received: true, ignored: true });
   }
 
@@ -44,11 +62,7 @@ export async function POST(req: NextRequest) {
     select: {
       id: true,
       customerPhone: true,
-      tenant: {
-        select: {
-          name: true,
-        },
-      },
+      tenant: { select: { name: true } },
     },
   });
 
@@ -65,10 +79,7 @@ export async function POST(req: NextRequest) {
 
     await prisma.subscription.update({
       where: { id: subscription.id },
-      data: {
-        status: "PAST_DUE",
-        updateToken,
-      },
+      data: { status: "PAST_DUE", updateToken },
     });
 
     await sendDunningMessage(
@@ -77,13 +88,20 @@ export async function POST(req: NextRequest) {
       updateUrl
     );
 
+    console.log(
+      `[iyzico Webhook] Ödeme başarısız → PAST_DUE: ${webhook.subscriptionReferenceCode}`
+    );
     return NextResponse.json({ received: true, status: "PAST_DUE" });
   }
 
+  // payment.success
   await prisma.subscription.update({
     where: { id: subscription.id },
     data: { status: "ACTIVE" },
   });
 
+  console.log(
+    `[iyzico Webhook] Ödeme başarılı → ACTIVE: ${webhook.subscriptionReferenceCode}`
+  );
   return NextResponse.json({ received: true, status: "ACTIVE" });
 }

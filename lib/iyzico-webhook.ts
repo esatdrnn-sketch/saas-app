@@ -1,51 +1,107 @@
-import { createHmac, timingSafeEqual } from "crypto";
+import { createHash, timingSafeEqual } from "crypto";
 
+// iyzico abonelik webhook event tipleri
 export type IyzicoWebhookEvent = "payment.failed" | "payment.success";
 
 export interface ParsedIyzicoWebhook {
   event: IyzicoWebhookEvent;
   subscriptionReferenceCode: string;
+  iyziReferenceCode: string;
+  iyziEventType: string;
 }
 
+export interface IyzicoRawPayload {
+  iyziEventType?: string;
+  iyziEventTime?: number;
+  iyziReferenceCode?: string;
+  iyziSignature?: string;
+  status?: string;
+  subscriptionReferenceCode?: string;
+  [key: string]: unknown;
+}
+
+/**
+ * iyzico webhook imza doğrulama.
+ * Algoritma: base64( SHA-1( secretKey + iyziReferenceCode + iyziEventType ) )
+ * Kaynak: https://dev.iyzipay.com/tr/webhook
+ */
 export function verifyIyzicoWebhookSignature(
-  rawBody: string,
-  signature: string | null
+  payload: IyzicoRawPayload,
+  secretKey: string
 ): boolean {
-  const secret = process.env.IYZICO_WEBHOOK_SECRET;
+  const { iyziSignature, iyziReferenceCode, iyziEventType } = payload;
 
-  if (!signature || !secret) {
+  if (!iyziSignature || !iyziReferenceCode || !iyziEventType) {
     return false;
   }
 
-  const expected = createHmac("sha256", secret).update(rawBody).digest("hex");
+  const raw = secretKey + iyziReferenceCode + iyziEventType;
+  const expected = Buffer.from(
+    createHash("sha1").update(raw).digest()
+  ).toString("base64");
 
-  if (signature.length !== expected.length) {
+  const expectedBuf = Buffer.from(expected);
+  const receivedBuf = Buffer.from(iyziSignature);
+
+  if (expectedBuf.length !== receivedBuf.length) {
     return false;
   }
 
-  return timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
+  return timingSafeEqual(expectedBuf, receivedBuf);
 }
 
-export function parseIyzicoWebhook(body: unknown): ParsedIyzicoWebhook | null {
-  if (!body || typeof body !== "object") {
+const FAILURE_EVENTS = new Set([
+  "SUBSCRIPTION_ORDER_FAILURE",
+  "SUBSCRIPTION_PAYMENT_RETRY_FAILURE",
+  "payment.failed",
+  "FAILURE",
+]);
+
+const SUCCESS_EVENTS = new Set([
+  "SUBSCRIPTION_ORDER_SUCCESS",
+  "SUBSCRIPTION_PAYMENT_SUCCESS",
+  "payment.success",
+  "SUCCESS",
+]);
+
+export function parseIyzicoWebhook(
+  body: unknown
+): ParsedIyzicoWebhook | null {
+  if (!body || typeof body !== "object") return null;
+
+  const p = body as IyzicoRawPayload;
+
+  const subscriptionReferenceCode = p.subscriptionReferenceCode;
+  const iyziReferenceCode = p.iyziReferenceCode;
+  const iyziEventType = p.iyziEventType ?? p.status;
+
+  if (
+    typeof subscriptionReferenceCode !== "string" ||
+    !subscriptionReferenceCode ||
+    typeof iyziReferenceCode !== "string" ||
+    !iyziReferenceCode ||
+    typeof iyziEventType !== "string" ||
+    !iyziEventType
+  ) {
     return null;
   }
 
-  const payload = body as Record<string, unknown>;
-  const subscriptionReferenceCode = payload.subscriptionReferenceCode;
-
-  if (typeof subscriptionReferenceCode !== "string" || !subscriptionReferenceCode) {
-    return null;
+  if (FAILURE_EVENTS.has(iyziEventType)) {
+    return {
+      event: "payment.failed",
+      subscriptionReferenceCode,
+      iyziReferenceCode,
+      iyziEventType,
+    };
   }
 
-  const eventValue = payload.event ?? payload.type ?? payload.status;
-
-  if (eventValue === "payment.failed" || eventValue === "FAILURE") {
-    return { event: "payment.failed", subscriptionReferenceCode };
-  }
-
-  if (eventValue === "payment.success" || eventValue === "SUCCESS") {
-    return { event: "payment.success", subscriptionReferenceCode };
+  if (SUCCESS_EVENTS.has(iyziEventType)) {
+    return {
+      event: "payment.success",
+      subscriptionReferenceCode,
+      iyziReferenceCode,
+      iyziEventType,
+    };
   }
 
   return null;
