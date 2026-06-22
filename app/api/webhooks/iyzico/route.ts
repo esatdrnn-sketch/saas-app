@@ -84,29 +84,35 @@ export async function POST(req: NextRequest) {
       data: { status: "PAST_DUE", updateToken },
     });
 
-    // WhatsApp / SMS bildirimi
+    // WhatsApp / SMS bildirimi (hata olsa da devam et)
     await sendDunningMessage(
       subscription.customerPhone,
       subscription.tenant.name,
       updateUrl
+    ).catch((err) =>
+      console.error("[Webhook] WhatsApp gönderim hatası:", err)
     );
 
-    // E-posta: 1. deneme (anında)
+    // E-posta: 1. deneme (hata olsa da webhook başarılı sayılır)
     if (subscription.customerEmail) {
-      await sendDunningEmail({
-        to: subscription.customerEmail,
-        businessName: subscription.tenant.name,
-        updateUrl,
-        attemptNumber: 1,
-      });
-
-      await prisma.dunningAttempt.create({
-        data: {
-          subscriptionId: subscription.id,
+      try {
+        await sendDunningEmail({
+          to: subscription.customerEmail,
+          businessName: subscription.tenant.name,
+          updateUrl,
           attemptNumber: 1,
-          emailTo: subscription.customerEmail,
-        },
-      });
+        });
+
+        await prisma.dunningAttempt.create({
+          data: {
+            subscriptionId: subscription.id,
+            attemptNumber: 1,
+            emailTo: subscription.customerEmail,
+          },
+        });
+      } catch (emailErr) {
+        console.error("[Webhook] E-posta gönderim hatası:", emailErr);
+      }
     }
 
     console.log(
