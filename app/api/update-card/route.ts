@@ -1,42 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { updateSubscriptionCard } from "@/lib/iyzico";
+import { initSubscriptionCardUpdate } from "@/lib/iyzico";
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-
   const token = body?.token as string | undefined;
-  const cardNumber = (body?.cardNumber as string | undefined)?.replace(/\s/g, "");
-  const expiry = body?.expiry as string | undefined;
-  const cvc = body?.cvc as string | undefined;
-  const holderName = body?.holderName as string | undefined;
 
-  if (!token || !cardNumber || !expiry || !cvc || !holderName) {
-    return NextResponse.json(
-      { error: "Eksik alanlar var." },
-      { status: 400 }
-    );
-  }
-
-  if (!/^\d{16}$/.test(cardNumber)) {
-    return NextResponse.json(
-      { error: "Geçersiz kart numarası." },
-      { status: 400 }
-    );
-  }
-
-  if (!/^\d{2}\/\d{2}$/.test(expiry)) {
-    return NextResponse.json(
-      { error: "Geçersiz son kullanma tarihi." },
-      { status: 400 }
-    );
-  }
-
-  if (!/^\d{3,4}$/.test(cvc)) {
-    return NextResponse.json(
-      { error: "Geçersiz CVC." },
-      { status: 400 }
-    );
+  if (!token) {
+    return NextResponse.json({ error: "Token eksik." }, { status: 400 });
   }
 
   const subscription = await prisma.subscription.findUnique({
@@ -65,18 +36,12 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  await updateSubscriptionCard({
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
+
+  const { checkoutUrl } = await initSubscriptionCardUpdate({
     subscriptionReferenceCode: subscription.iyzicoSubRef,
-    cardNumber,
-    expiry,
-    cvc,
-    holderName,
+    callbackUrl: `${appUrl}/api/webhooks/iyzico`,
   });
 
-  await prisma.subscription.update({
-    where: { id: subscription.id },
-    data: { status: "RECOVERED" },
-  });
-
-  return NextResponse.json({ success: true });
+  return NextResponse.json({ checkoutUrl });
 }

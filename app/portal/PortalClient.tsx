@@ -343,147 +343,66 @@ function CancelFlow({ token, tenantName }: { token: string; tenantName: string }
 // ─── CARD UPDATE FLOW ─────────────────────────────────────────────────────────
 
 function CardUpdateFlow({ token }: { token: string }) {
-  const [cardNumber, setCardNumber] = useState("");
-  const [expiry, setExpiry] = useState("");
-  const [cvc, setCvc] = useState("");
-  const [holderName, setHolderName] = useState("");
   const [loading, setLoading] = useState(false);
-  const [done, setDone] = useState(false);
   const [error, setError] = useState("");
 
-  function formatCardNumber(v: string) {
-    return v.replace(/\D/g, "").slice(0, 16).replace(/(.{4})/g, "$1 ").trim();
-  }
-
-  function formatExpiry(v: string) {
-    const digits = v.replace(/\D/g, "").slice(0, 4);
-    return digits.length > 2 ? digits.slice(0, 2) + "/" + digits.slice(2) : digits;
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleRedirect() {
     setLoading(true);
     setError("");
     try {
       const res = await fetch("/api/update-card", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          token,
-          cardNumber: cardNumber.replace(/\s/g, ""),
-          expiry,
-          cvc,
-          holderName,
-        }),
+        body: JSON.stringify({ token }),
       });
-      if (!res.ok) {
-        const data = (await res.json().catch(() => null)) as { error?: string } | null;
-        throw new Error(data?.error ?? "İstek başarısız oldu.");
+      const data = (await res.json().catch(() => null)) as {
+        checkoutUrl?: string;
+        error?: string;
+      } | null;
+      if (!res.ok || !data?.checkoutUrl) {
+        throw new Error(data?.error ?? "Yönlendirme başarısız oldu.");
       }
-      setDone(true);
+      window.location.href = data.checkoutUrl;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Bir hata oluştu.");
-    } finally {
       setLoading(false);
     }
   }
 
-  if (done) {
-    return (
-      <div className="p-8 text-center">
-        <div className="mx-auto mb-5 w-14 h-14 flex items-center justify-center bg-green-100">
-          <span className="text-2xl font-bold text-green-600">✓</span>
-        </div>
-        <h2 className="text-lg font-bold text-slate-900 mb-2">Kart bilgileri güncellendi</h2>
-        <p className="text-sm text-slate-500">
-          Ödeme bilgileriniz başarıyla kaydedildi. Aboneliğiniz aktif olarak devam edecek.
-        </p>
-      </div>
-    );
-  }
-
   return (
-    <form onSubmit={handleSubmit} className="p-6">
+    <div className="p-6">
       <h2 className="text-sm font-bold text-slate-900 mb-5 uppercase tracking-wide">
-        Yeni kart bilgilerini girin
+        Kart Bilgilerini Güncelle
       </h2>
 
-      <div className="space-y-4">
-        <div>
-          <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-            Kart Numarası
-          </label>
-          <input
-            type="text"
-            inputMode="numeric"
-            placeholder="0000 0000 0000 0000"
-            value={cardNumber}
-            onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
-            className="w-full border border-slate-300 px-4 py-3 text-sm text-slate-900 placeholder-slate-400 outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
-            required
-          />
-        </div>
-
-        <div>
-          <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-            Kart Sahibi
-          </label>
-          <input
-            type="text"
-            placeholder="Ad Soyad"
-            value={holderName}
-            onChange={(e) => setHolderName(e.target.value)}
-            className="w-full border border-slate-300 px-4 py-3 text-sm text-slate-900 placeholder-slate-400 outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
-            required
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
+      <div className="border border-slate-200 bg-slate-50 p-5 mb-6">
+        <div className="flex items-start gap-3">
+          <svg className="w-5 h-5 text-indigo-600 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+          </svg>
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-              Son Kullanma
-            </label>
-            <input
-              type="text"
-              inputMode="numeric"
-              placeholder="AA/YY"
-              value={expiry}
-              onChange={(e) => setExpiry(formatExpiry(e.target.value))}
-              className="w-full border border-slate-300 px-4 py-3 text-sm text-slate-900 placeholder-slate-400 outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-              CVC
-            </label>
-            <input
-              type="text"
-              inputMode="numeric"
-              placeholder="000"
-              maxLength={4}
-              value={cvc}
-              onChange={(e) => setCvc(e.target.value.replace(/\D/g, "").slice(0, 4))}
-              className="w-full border border-slate-300 px-4 py-3 text-sm text-slate-900 placeholder-slate-400 outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
-              required
-            />
+            <p className="text-sm font-semibold text-slate-900 mb-1">Güvenli ödeme sayfasına yönlendirileceksiniz</p>
+            <p className="text-xs text-slate-500">
+              Kart bilgileriniz iyzico'nun PCI DSS sertifikalı güvenli sayfasında işlenir. Bilgileriniz bizim sistemimizde saklanmaz.
+            </p>
           </div>
         </div>
       </div>
 
-      {error && <p className="mt-3 text-xs text-red-600">{error}</p>}
+      {error && <p className="mb-4 text-xs text-red-600">{error}</p>}
 
       <button
-        type="submit"
+        type="button"
         disabled={loading}
-        className="w-full mt-6 bg-indigo-600 text-white py-3 text-sm font-bold disabled:opacity-40 hover:bg-indigo-700 transition-colors uppercase tracking-wide"
+        onClick={handleRedirect}
+        className="w-full bg-indigo-600 text-white py-3 text-sm font-bold disabled:opacity-40 hover:bg-indigo-700 transition-colors uppercase tracking-wide"
       >
-        {loading ? "Kaydediliyor..." : "Kartı Güncelle"}
+        {loading ? "Yönlendiriliyor..." : "iyzico ile Kartı Güncelle →"}
       </button>
 
       <p className="mt-4 text-center text-xs text-slate-400">
-        🔒 256-bit SSL şifrelemesi ile korunmaktadır
+        256-bit SSL şifrelemesi · iyzico güvencesiyle
       </p>
-    </form>
+    </div>
   );
 }

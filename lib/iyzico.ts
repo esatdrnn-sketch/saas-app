@@ -1,81 +1,89 @@
-import { createHmac, randomUUID } from "crypto";
+import { createHmac } from "crypto";
 
-interface UpdateCardInput {
+interface InitCardUpdateInput {
   subscriptionReferenceCode: string;
-  cardNumber: string;
-  expiry: string; // "MM/YY"
-  cvc: string;
-  holderName: string;
+  callbackUrl: string;
+  locale?: string;
+  conversationId?: string;
 }
 
-function buildAuthHeader(
+export interface InitCardUpdateResult {
+  checkoutUrl: string;
+}
+
+function generateRandomString(): string {
+  return `${process.hrtime ? process.hrtime()[0] : Date.now()}${Math.random().toString(8).slice(2)}`;
+}
+
+function buildAuthHeaderV2(
   apiKey: string,
   secretKey: string,
-  body: string
+  uri: string,
+  randomString: string,
+  body: Record<string, unknown>
 ): string {
-  const randomKey = randomUUID().replace(/-/g, "");
-  // iyzico v2 imza: HMAC-SHA256(secretKey, secretKey + randomKey + body)
-  const pki = secretKey + randomKey + body;
+  // iyzipay v2 imza: HMAC-SHA256(secretKey, randomString + uri + JSON.stringify(body)) → hex
   const signature = createHmac("sha256", secretKey)
-    .update(pki)
-    .digest("base64");
-  return `IYZWSv2 apiKey:${apiKey}&randomKey:${randomKey}&signature:${signature}`;
+    .update(randomString + uri + JSON.stringify(body))
+    .digest("hex");
+
+  const params = `apiKey:${apiKey}&randomKey:${randomString}&signature:${signature}`;
+  return `IYZWSv2 ${Buffer.from(params).toString("base64")}`;
 }
 
-export async function updateSubscriptionCard(
-  input: UpdateCardInput
-): Promise<{ success: true }> {
+export async function initSubscriptionCardUpdate(
+  input: InitCardUpdateInput
+): Promise<InitCardUpdateResult> {
   const apiKey = process.env.IYZICO_API_KEY;
   const secretKey = process.env.IYZICO_SECRET_KEY;
-  const baseUrl =
-    process.env.IYZICO_BASE_URL ?? "https://sandbox.iyzipay.com";
+  const baseUrl = "https://api.iyzipay.com";
+  const uri = "/v2/subscription/card-update/checkoutform/initialize/with-subscription";
 
   if (!apiKey || !secretKey) {
     throw new Error("iyzico API anahtarları yapılandırılmamış.");
   }
 
-  const [expireMonth, expireYear] = input.expiry.split("/");
-
-  const requestBody = {
-    locale: "tr",
-    conversationId: randomUUID(),
+  const body: Record<string, unknown> = {
+    locale: input.locale ?? "tr",
+    conversationId: input.conversationId ?? String(Date.now()),
     subscriptionReferenceCode: input.subscriptionReferenceCode,
-    callbackUrl: `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/api/webhooks/iyzico`,
-    cardHolderName: input.holderName,
-    cardNumber: input.cardNumber,
-    expireMonth: expireMonth,
-    expireYear: `20${expireYear}`,
-    cvc: input.cvc,
+    callbackUrl: input.callbackUrl,
   };
 
-  const bodyStr = JSON.stringify(requestBody);
-  const authHeader = buildAuthHeader(apiKey, secretKey, bodyStr);
+  const randomString = generateRandomString();
+  const authHeader = buildAuthHeaderV2(apiKey, secretKey, uri, randomString, body);
 
-  const res = await fetch(
-    `${baseUrl}/v2/subscription/card-update/checkoutform/initialize`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: authHeader,
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: bodyStr,
-    }
-  );
+  const res = await fetch(`${baseUrl}${uri}`, {
+    method: "POST",
+    headers: {
+      Authorization: authHeader,
+      "x-iyzi-rnd": randomString,
+      "x-iyzi-client-version": "iyzipay-node-2.0.69",
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify(body),
+  });
 
   const data = (await res.json().catch(() => null)) as {
     status?: string;
+    payWithIyzicoPageUrl?: string;
+    checkoutFormContent?: string;
     errorMessage?: string;
     errorCode?: string;
   } | null;
 
-  if (!res.ok || data?.status !== "success") {
+  if (!res.ok || !data || data.status !== "success") {
     throw new Error(
       data?.errorMessage ??
-        `iyzico kart güncelleme başarısız (HTTP ${res.status}).`
+        `iyzico kart güncelleme başlatma başarısız (HTTP ${res.status}).`
     );
   }
 
-  return { success: true };
+  const checkoutUrl = data.payWithIyzicoPageUrl;
+  if (!checkoutUrl) {
+    throw new Error("iyzico'dan yönlendirme URL'i alınamadı.");
+  }
+
+  return { checkoutUrl };
 }
