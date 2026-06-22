@@ -38,10 +38,14 @@ export async function POST(req: NextRequest) {
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
 
-  const { checkoutUrl } = await initSubscriptionCardUpdate({
-    subscriptionReferenceCode: subscription.iyzicoSubRef,
-    callbackUrl: `${appUrl}/api/webhooks/iyzico`,
-  });
-
-  return NextResponse.json({ checkoutUrl });
+  try {
+    const { checkoutUrl } = await initSubscriptionCardUpdate({
+      subscriptionReferenceCode: subscription.iyzicoSubRef,
+      callbackUrl: `${appUrl}/api/webhooks/iyzico`,
+    });
+    return NextResponse.json({ checkoutUrl });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Kart güncelleme başlatılamadı.";
+    return NextResponse.json({ error: msg }, { status: 502 });
+  }
 }
