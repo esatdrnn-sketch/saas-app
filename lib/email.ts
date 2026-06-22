@@ -1,7 +1,8 @@
 import { Resend } from "resend";
 
+// Domain doğrulanmışsa RESEND_FROM set edilir, yoksa Resend test adresi
 const FROM_ADDRESS =
-  process.env.RESEND_FROM ?? "RecoverPanel <noreply@recoverpanel.app>";
+  process.env.RESEND_FROM ?? "onboarding@resend.dev";
 
 function getClient(): Resend | null {
   const apiKey = process.env.RESEND_API_KEY;
