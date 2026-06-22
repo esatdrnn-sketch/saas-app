@@ -1,29 +1,23 @@
-const weeklyRevenue = [
-  { day: "P", label: "Pzt", value: 62, amount: "₺12.400", currency: "TRY" as const },
-  { day: "S", label: "Sal", value: 84, amount: "₺15.800", currency: "TRY" as const },
-  { day: "M", label: "Çar", value: 58, amount: "₺11.200", currency: "TRY" as const },
-  { day: "T", label: "Per", value: 72, amount: "$420", currency: "USD" as const },
-  { day: "W", label: "Cum", value: 92, amount: "₺22.100", currency: "TRY" as const },
-  { day: "T", label: "Cmt", value: 48, amount: "₺9.800", currency: "TRY" as const },
-  { day: "S", label: "Paz", value: 66, amount: "$310", currency: "USD" as const },
-];
+export interface ChartDay {
+  label: string;
+  day: string;
+  value: number;
+  count: number;
+}
 
-export function RecoveredRevenueChart() {
-  const average = Math.round(
-    weeklyRevenue.reduce((sum, item) => sum + item.value, 0) /
-      weeklyRevenue.length
-  );
-  const peak = Math.max(...weeklyRevenue.map((item) => item.value));
+export function RecoveredRevenueChart({ days }: { days: ChartDay[] }) {
+  const peak = Math.max(...days.map((d) => d.value), 1);
+  const total = days.reduce((s, d) => s + d.count, 0);
 
   return (
     <section className="min-w-0 rounded-[28px] border border-slate-200/80 bg-white p-6 shadow-sm">
       <div className="mb-6 flex items-center justify-between gap-4">
         <div>
           <h3 className="text-lg font-bold text-slate-900">
-            Haftalık Kurtarılan Ciro Analizi
+            Haftalık Dunning Aktivitesi
           </h3>
           <p className="mt-1 text-sm text-slate-500">
-            Son 7 gün — TL ve USD bazında kurtarılan gelir (mock veri)
+            Son 7 gün — gönderilen dunning e-postası sayısı
           </p>
         </div>
         <span className="hidden rounded-full border border-slate-200 px-3 py-1 text-xs font-medium text-slate-500 sm:inline-flex">
@@ -42,38 +36,39 @@ export function RecoveredRevenueChart() {
         </div>
 
         <div className="absolute inset-x-0 bottom-0 ml-8 flex h-[calc(100%-12px)] items-end justify-between gap-2 sm:gap-4">
-          {weeklyRevenue.map((item, index) => (
-            <div
-              key={`${item.label}-${index}`}
-              className="flex min-w-0 flex-1 flex-col items-center justify-end gap-3"
-            >
+          {days.map((item, index) => {
+            const heightPct = peak > 0 ? Math.round((item.value / peak) * 100) : 0;
+            return (
               <div
-                className="w-full max-w-12 rounded-t-[18px] rounded-b-md transition-all"
-                style={{ height: `${item.value}%` }}
-                title={item.amount}
+                key={item.label}
+                className="flex min-w-0 flex-1 flex-col items-center justify-end gap-3"
               >
                 <div
-                  className={
-                    index % 2 === 0
-                      ? "size-full rounded-t-[18px] bg-[#015021]"
-                      : "size-full rounded-t-[18px] bg-[#7ed957]"
-                  }
-                />
+                  className="w-full max-w-12 rounded-t-[18px] rounded-b-md transition-all"
+                  style={{ height: `${Math.max(heightPct, 2)}%` }}
+                  title={`${item.count} e-posta`}
+                >
+                  <div
+                    className={
+                      index % 2 === 0
+                        ? "size-full rounded-t-[18px] bg-[#015021]"
+                        : "size-full rounded-t-[18px] bg-[#7ed957]"
+                    }
+                  />
+                </div>
+                <span className="text-xs font-semibold text-slate-500">{item.day}</span>
               </div>
-              <span className="text-xs font-semibold text-slate-500">
-                {item.day}
-              </span>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4 text-sm">
         <span className="font-medium text-slate-700">
-          Average: <span className="text-[#015021]">{average}%</span>
+          Toplam: <span className="text-[#015021]">{total} e-posta</span>
         </span>
         <span className="font-medium text-slate-700">
-          Peak: <span className="text-[#015021]">{peak}%</span>
+          Zirve: <span className="text-[#015021]">{peak} / gün</span>
         </span>
       </div>
     </section>

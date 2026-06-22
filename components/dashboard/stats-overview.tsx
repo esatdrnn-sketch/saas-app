@@ -1,49 +1,52 @@
 import { ArrowUpRight, CreditCard, Percent, RefreshCw, Wallet } from "lucide-react";
 
-const stats = [
-  {
-    label: "Recovered Revenue",
-    sublabel: "Kurtarılan Toplam Ciro",
-    value: "₺128.400",
-    change: "+18.2% bu ay",
-    icon: Wallet,
-    featured: true,
-  },
-  {
-    label: "Failed Invoices Today",
-    sublabel: "Bugün Reddedilen Faturalar",
-    value: "14",
-    change: "+3 dünden",
-    icon: CreditCard,
-  },
-  {
-    label: "Active Dunning Campaigns",
-    sublabel: "Aktif Kurtarma Süreçleri",
-    value: "6",
-    change: "2 yeni başlatıldı",
-    icon: RefreshCw,
-  },
-  {
-    label: "Recovery Rate (%)",
-    sublabel: "Ödeme Kurtarma Başarı Oranı",
-    value: "%64",
-    change: "+4.1 puan",
-    icon: Percent,
-  },
-];
+export interface StatsData {
+  recoveredCount: number;
+  failedToday: number;
+  activeDunning: number;
+  recoveryRate: number;
+}
 
-export function StatsOverview() {
+export function StatsOverview({ data }: { data: StatsData }) {
+  const stats = [
+    {
+      label: "Recovered Subscriptions",
+      sublabel: "Kurtarılan Abonelik",
+      value: data.recoveredCount.toString(),
+      change: "Toplam kurtarılan",
+      icon: Wallet,
+      featured: true,
+    },
+    {
+      label: "Failed Today",
+      sublabel: "Bugün Başarısız Ödeme",
+      value: data.failedToday.toString(),
+      change: "Son 24 saat",
+      icon: CreditCard,
+    },
+    {
+      label: "Active Dunning",
+      sublabel: "Aktif Kurtarma Süreci",
+      value: data.activeDunning.toString(),
+      change: "PAST_DUE abonelik",
+      icon: RefreshCw,
+    },
+    {
+      label: "Recovery Rate",
+      sublabel: "Ödeme Kurtarma Oranı",
+      value: `%${data.recoveryRate}`,
+      change: "Kurtarılan / toplam",
+      icon: Percent,
+    },
+  ];
+
   return (
     <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      {stats.map((stat) => {
+      {stats.map((stat, i) => {
         const Icon = stat.icon;
-
-        if (stat.featured) {
+        if (i === 0) {
           return (
-            <div
-              key={stat.label}
-              className="relative overflow-hidden rounded-[28px] bg-[#015021] p-6 text-white shadow-sm"
-            >
+            <div key={stat.label} className="relative overflow-hidden rounded-[28px] bg-[#015021] p-6 text-white shadow-sm">
               <div className="mb-6 flex items-start justify-between">
                 <div className="grid size-10 place-content-center rounded-full bg-white/15">
                   <Icon className="size-5" />
@@ -57,12 +60,8 @@ export function StatsOverview() {
             </div>
           );
         }
-
         return (
-          <div
-            key={stat.label}
-            className="rounded-[28px] border border-slate-200/80 bg-white p-6 shadow-sm"
-          >
+          <div key={stat.label} className="rounded-[28px] border border-slate-200/80 bg-white p-6 shadow-sm">
             <div className="mb-6 flex items-start justify-between">
               <div className="grid size-10 place-content-center rounded-full bg-[#ecf7ef] text-[#015021]">
                 <Icon className="size-5" />
@@ -71,9 +70,7 @@ export function StatsOverview() {
             </div>
             <p className="text-sm font-medium text-slate-600">{stat.label}</p>
             <p className="mt-1 text-[11px] text-slate-400">{stat.sublabel}</p>
-            <p className="mt-4 text-4xl font-bold tracking-tight text-slate-900">
-              {stat.value}
-            </p>
+            <p className="mt-4 text-4xl font-bold tracking-tight text-slate-900">{stat.value}</p>
             <p className="mt-3 text-xs text-slate-500">{stat.change}</p>
           </div>
         );

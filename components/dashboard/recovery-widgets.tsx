@@ -1,4 +1,6 @@
-export function RecoveryProgressCard() {
+export function RecoveryProgressCard({ rate }: { rate: number }) {
+  const clampedRate = Math.min(100, Math.max(0, rate));
+
   return (
     <section className="rounded-[28px] border border-slate-200/80 bg-white p-6 shadow-sm">
       <h3 className="text-lg font-bold text-slate-900">Recovery Rate (%)</h3>
@@ -12,11 +14,11 @@ export function RecoveryProgressCard() {
               cx="60" cy="60" r="48" fill="none"
               stroke="#015021" strokeWidth="10"
               strokeLinecap="round"
-              strokeDasharray={`${64 * 3.015} 999`}
+              strokeDasharray={`${clampedRate * 3.015} 999`}
             />
           </svg>
           <div className="absolute text-center">
-            <p className="text-3xl font-bold text-slate-900">%64</p>
+            <p className="text-3xl font-bold text-slate-900">%{clampedRate}</p>
             <p className="text-xs text-slate-500">Kurtarıldı</p>
           </div>
         </div>
@@ -40,14 +42,16 @@ export function RecoveryProgressCard() {
   );
 }
 
-export function DunningReminderCard() {
+export function DunningReminderCard({ pendingCount }: { pendingCount: number }) {
   return (
     <section className="rounded-[28px] border border-slate-200/80 bg-white p-6 shadow-sm">
       <h3 className="text-lg font-bold text-slate-900">Otomatik Hatırlatma</h3>
       <div className="mt-5 rounded-[22px] bg-[#f5f7f6] p-5">
         <h4 className="font-semibold text-slate-900">Failed Payment Follow-up</h4>
         <p className="mt-2 text-sm text-slate-500">
-          Sonraki dunning e-postası: 14 reddedilen fatura için planlandı
+          {pendingCount > 0
+            ? `${pendingCount} reddedilen fatura için dunning e-postası planlandı`
+            : "Şu an bekleyen dunning e-postası yok"}
         </p>
         <button
           type="button"
