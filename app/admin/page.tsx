@@ -1,9 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import type { SubscriptionStatus } from "@prisma/client";
-import {
-  CANCEL_REASON_LABELS,
-  CANCEL_REASON_ORDER,
-} from "@/lib/cancellation";
+import { CANCEL_REASON_LABELS, CANCEL_REASON_ORDER } from "@/lib/cancellation";
 import styles from "./admin.module.css";
 import LogoutButton from "./LogoutButton";
 import AdminClient from "./AdminClient";
@@ -11,6 +8,8 @@ import DunningButton from "./DunningButton";
 import CopyPortalLink from "./CopyPortalLink";
 
 export const dynamic = "force-dynamic";
+
+const DAY_SHORTS = ["P", "P", "S", "Ç", "P", "C", "C"];
 
 const statusConfig: Record<SubscriptionStatus, { label: string; className: string }> = {
   PAST_DUE:  { label: "PAST_DUE",  className: styles.pastDue },
@@ -31,17 +30,27 @@ function formatAmount(amount: number | null, currency: string) {
 }
 
 export default async function AdminPage() {
-  const [subscriptions, cancellationEvents, tenants] = await Promise.all([
-    prisma.subscription.findMany({
-      orderBy: { updatedAt: "desc" },
-      include: {
-        tenant: { select: { name: true } },
-        dunningAttempts: { orderBy: { attemptNumber: "desc" }, take: 1 },
-      },
-    }),
-    prisma.cancellationEvent.findMany({ select: { reason: true, action: true } }),
-    prisma.tenant.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true, loginKey: true } }),
-  ]);
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+  const [subscriptions, cancellationEvents, tenants, failedToday, dunningAttempts, autoCancelledCount] =
+    await Promise.all([
+      prisma.subscription.findMany({
+        orderBy: { updatedAt: "desc" },
+        include: {
+          tenant: { select: { name: true } },
+          dunningAttempts: { orderBy: { attemptNumber: "desc" }, take: 1 },
+        },
+      }),
+      prisma.cancellationEvent.findMany({ select: { reason: true, action: true } }),
+      prisma.tenant.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true, loginKey: true } }),
+      prisma.subscription.count({ where: { status: "PAST_DUE", updatedAt: { gte: todayStart } } }),
+      prisma.dunningAttempt.findMany({ where: { sentAt: { gte: sevenDaysAgo } }, select: { sentAt: true } }),
+      prisma.subscription.count({
+        where: { status: "CANCELLED", dunningAttempts: { some: { attemptNumber: 3 } } },
+      }),
+    ]);
 
   const pastDueCount   = subscriptions.filter((s) => s.status === "PAST_DUE").length;
   const recoveredCount = subscriptions.filter((s) => s.status === "RECOVERED").length;
@@ -60,19 +69,34 @@ export default async function AdminPage() {
     (e) => e.action === "CANCEL" && (e.reason === "TOO_EXPENSIVE" || e.reason === "TEMPORARY")
   ).length;
 
+  // 7 günlük grafik verisi
+  const countsByDay: Record<string, number> = {};
+  for (const a of dunningAttempts) {
+    const key = a.sentAt.toISOString().slice(0, 10);
+    countsByDay[key] = (countsByDay[key] ?? 0) + 1;
+  }
+  const chartDays = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(Date.now() - (6 - i) * 24 * 60 * 60 * 1000);
+    const key = d.toISOString().slice(0, 10);
+    return { day: DAY_SHORTS[d.getDay()], value: countsByDay[key] ?? 0 };
+  });
+  const chartMax = Math.max(...chartDays.map((d) => d.value), 1);
+
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
 
   return (
     <div className={styles.page}>
       <div className={styles.shell}>
         <header className={styles.topBar}>
-          <p className={styles.brand}>Churn Recovery</p>
-          <h1 className={styles.heading}>Kurtarma Paneli</h1>
+          <div>
+            <p className={styles.brand}>RecoverPanel</p>
+            <h1 className={styles.heading}>Yönetim Paneli</h1>
+          </div>
           <LogoutButton />
         </header>
 
-        {/* Stats kartları */}
-        <div className={styles.statsGrid}>
+        {/* Stats — 5 kart */}
+        <div className={styles.statsGrid5}>
           <div className={styles.statCard}>
             <p className={styles.statLabel}>Kurtarma Oranı</p>
             <p className={styles.statValue}>%{recoveryRate}</p>
@@ -90,9 +114,43 @@ export default async function AdminPage() {
             </p>
             <p className={styles.statHint}>PAST_DUE abonelik</p>
           </div>
+          <div className={styles.statCard}>
+            <p className={styles.statLabel}>Bugün Başarısız</p>
+            <p className={`${styles.statValue} ${failedToday > 0 ? styles.statDanger : ""}`}>
+              {failedToday}
+            </p>
+            <p className={styles.statHint}>yeni PAST_DUE</p>
+          </div>
+          <div className={styles.statCard}>
+            <p className={styles.statLabel}>Otomatik İptal</p>
+            <p className={styles.statValue}>{autoCancelledCount}</p>
+            <p className={styles.statHint}>3. denemeden sonra</p>
+          </div>
         </div>
 
-        {/* Tenant listesi + login key'leri */}
+        {/* 7 Günlük Dunning Aktivitesi */}
+        <section className={`${styles.panel} ${styles.panelSpaced}`}>
+          <div className={styles.panelHead}>
+            <h2 className={styles.panelTitle}>Son 7 Gün — Dunning Aktivitesi</h2>
+            <span className={styles.count}>{dunningAttempts.length} deneme</span>
+          </div>
+          <div className={styles.chartWrap}>
+            {chartDays.map((d, i) => (
+              <div key={i} className={styles.chartCol}>
+                <div className={styles.chartBarWrap}>
+                  <div
+                    className={styles.chartBar}
+                    style={{ height: `${Math.round((d.value / chartMax) * 100)}%` }}
+                  />
+                </div>
+                <span className={styles.chartLabel}>{d.day}</span>
+                {d.value > 0 && <span className={styles.chartValue}>{d.value}</span>}
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Tenant Giriş Anahtarları */}
         <section className={`${styles.panel} ${styles.panelSpaced}`}>
           <div className={styles.panelHead}>
             <h2 className={styles.panelTitle}>Tenant Giriş Anahtarları</h2>
@@ -104,7 +162,7 @@ export default async function AdminPage() {
                 <tr>
                   <th>Tenant Adı</th>
                   <th>Giriş Anahtarı</th>
-                  <th>Dashboard</th>
+                  <th>İşlem</th>
                 </tr>
               </thead>
               <tbody>
