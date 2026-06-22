@@ -1,4 +1,6 @@
 import { execSync } from "node:child_process";
+import { config } from "dotenv";
+config();
 
 /**
  * Prisma 7'de directUrl kaldırıldı. Neon'da migrate deploy için
