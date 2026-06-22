@@ -36,7 +36,8 @@ export async function initSubscriptionCardUpdate(
 ): Promise<InitCardUpdateResult> {
   const apiKey = process.env.IYZICO_API_KEY;
   const secretKey = process.env.IYZICO_SECRET_KEY;
-  const baseUrl = "https://api.iyzipay.com";
+  const baseUrl =
+    process.env.IYZICO_BASE_URL ?? "https://sandbox-api.iyzipay.com";
   const uri = "/v2/subscription/card-update/checkoutform/initialize/with-subscription";
 
   if (!apiKey || !secretKey) {
