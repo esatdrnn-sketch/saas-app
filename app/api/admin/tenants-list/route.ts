@@ -4,7 +4,8 @@ import { cookies } from "next/headers";
 
 export async function GET() {
   const store = await cookies();
-  if (store.get("admin_session")?.value !== "authenticated") {
+  const secret = process.env.ADMIN_SESSION_SECRET;
+  if (!secret || store.get("admin_session")?.value !== secret) {
     return NextResponse.json({ error: "Yetkisiz." }, { status: 401 });
   }
   const tenants = await prisma.tenant.findMany({

@@ -3,8 +3,10 @@ import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
 
 async function isAdmin(): Promise<boolean> {
+  const secret = process.env.ADMIN_SESSION_SECRET;
+  if (!secret) return false;
   const store = await cookies();
-  return store.get("admin_session")?.value === "authenticated";
+  return store.get("admin_session")?.value === secret;
 }
 
 export async function POST(req: NextRequest) {
