@@ -1,10 +1,11 @@
-import { ArrowUpRight, CreditCard, Percent, RefreshCw, Wallet } from "lucide-react";
+import { ArrowUpRight, CreditCard, Percent, RefreshCw, Wallet, XCircle } from "lucide-react";
 
 export interface StatsData {
   recoveredCount: number;
   failedToday: number;
   activeDunning: number;
   recoveryRate: number;
+  autoCancelled: number;
 }
 
 export function StatsOverview({ data }: { data: StatsData }) {
@@ -38,10 +39,17 @@ export function StatsOverview({ data }: { data: StatsData }) {
       change: "Kurtarılan / toplam",
       icon: Percent,
     },
+    {
+      label: "Auto Cancelled",
+      sublabel: "Otomatik İptal",
+      value: data.autoCancelled.toString(),
+      change: "3. deneme → iptal",
+      icon: XCircle,
+    },
   ];
 
   return (
-    <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
       {stats.map((stat, i) => {
         const Icon = stat.icon;
         if (i === 0) {

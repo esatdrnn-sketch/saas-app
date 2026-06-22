@@ -26,6 +26,9 @@ export default async function HomePage({
       token={token}
       tenantName={subscription.tenant.name}
       subscriptionStatus={subscription.status}
+      planName={subscription.planName ?? undefined}
+      amount={subscription.amount ?? undefined}
+      currency={subscription.currency}
     />
   );
 }

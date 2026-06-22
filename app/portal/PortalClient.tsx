@@ -19,9 +19,12 @@ interface Props {
   token: string;
   tenantName: string;
   subscriptionStatus: SubscriptionStatus;
+  planName?: string;
+  amount?: number;
+  currency?: string;
 }
 
-export default function PortalClient({ token, tenantName }: Props) {
+export default function PortalClient({ token, tenantName, planName, amount, currency = "TRY" }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>("cancel");
 
   return (
@@ -52,6 +55,21 @@ export default function PortalClient({ token, tenantName }: Props) {
           <p className="mt-1 text-sm text-slate-500">
             Aboneliğinizi yönetmek için aşağıdaki seçeneklerden birini kullanın.
           </p>
+          {(planName || amount) && (
+            <div className="mt-4 flex items-center gap-3 border border-slate-200 bg-white px-4 py-3">
+              {planName && (
+                <span className="text-xs font-bold uppercase tracking-widest bg-indigo-50 text-indigo-700 px-2 py-1">
+                  {planName}
+                </span>
+              )}
+              {amount != null && (
+                <span className="text-sm font-semibold text-slate-700">
+                  {new Intl.NumberFormat("tr-TR", { style: "currency", currency }).format(amount)}
+                  <span className="text-slate-400 font-normal"> / ay</span>
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Tabs */}

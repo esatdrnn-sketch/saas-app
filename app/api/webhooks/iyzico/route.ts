@@ -121,6 +121,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ received: true, status: "PAST_DUE" });
   }
 
+  // card.updated → PAST_DUE'dan kurtarıldı
+  if (webhook.event === "card.updated") {
+    await prisma.subscription.update({
+      where: { id: subscription.id },
+      data: { status: "RECOVERED" },
+    });
+    console.log(
+      `[iyzico Webhook] Kart güncellendi → RECOVERED: ${webhook.subscriptionReferenceCode}`
+    );
+    return NextResponse.json({ received: true, status: "RECOVERED" });
+  }
+
   // payment.success
   await prisma.subscription.update({
     where: { id: subscription.id },

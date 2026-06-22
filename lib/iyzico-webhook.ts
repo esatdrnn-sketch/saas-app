@@ -1,7 +1,7 @@
 import { createHash, timingSafeEqual } from "crypto";
 
 // iyzico abonelik webhook event tipleri
-export type IyzicoWebhookEvent = "payment.failed" | "payment.success";
+export type IyzicoWebhookEvent = "payment.failed" | "payment.success" | "card.updated";
 
 export interface ParsedIyzicoWebhook {
   event: IyzicoWebhookEvent;
@@ -64,6 +64,11 @@ const SUCCESS_EVENTS = new Set([
   "SUCCESS",
 ]);
 
+const CARD_UPDATE_EVENTS = new Set([
+  "SUBSCRIPTION_CARD_INFO_UPDATED",
+  "card.updated",
+]);
+
 export function parseIyzicoWebhook(
   body: unknown
 ): ParsedIyzicoWebhook | null {
@@ -98,6 +103,15 @@ export function parseIyzicoWebhook(
   if (SUCCESS_EVENTS.has(iyziEventType)) {
     return {
       event: "payment.success",
+      subscriptionReferenceCode,
+      iyziReferenceCode,
+      iyziEventType,
+    };
+  }
+
+  if (CARD_UPDATE_EVENTS.has(iyziEventType)) {
+    return {
+      event: "card.updated",
       subscriptionReferenceCode,
       iyziReferenceCode,
       iyziEventType,

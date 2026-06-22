@@ -18,7 +18,7 @@ async function getDashboardData() {
 
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-  const [statusCounts, failedToday, recentSubs, dunningAttempts] =
+  const [statusCounts, failedToday, recentSubs, dunningAttempts, autoCancelledCount] =
     await Promise.all([
       // Abonelik statü dağılımı
       prisma.subscription.groupBy({
@@ -50,6 +50,13 @@ async function getDashboardData() {
       prisma.dunningAttempt.findMany({
         where: { sentAt: { gte: sevenDaysAgo } },
         select: { sentAt: true },
+      }),
+      // 3 dunning denemesi tamamlanmış CANCELLED abonelikler (otomatik iptal)
+      prisma.subscription.count({
+        where: {
+          status: "CANCELLED",
+          dunningAttempts: { some: { attemptNumber: 3 } },
+        },
       }),
     ]);
 
@@ -107,7 +114,7 @@ async function getDashboardData() {
   });
 
   return {
-    stats: { recoveredCount, failedToday, activeDunning: pastDueCount, recoveryRate },
+    stats: { recoveredCount, failedToday, activeDunning: pastDueCount, recoveryRate, autoCancelled: autoCancelledCount },
     chartDays,
     rows,
     pendingCount: pastDueCount,
