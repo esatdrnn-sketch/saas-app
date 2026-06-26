@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
-import { buildUpdatePaymentUrl } from "@/lib/app-url";
+import { buildUpdatePaymentUrl, buildShortPortalUrl } from "@/lib/app-url";
 import { sendDunningEmail } from "@/lib/email";
 import { sendDunningMessage } from "@/lib/whatsapp";
 
@@ -54,6 +54,9 @@ export async function POST(req: NextRequest) {
   }
 
   const updateUrl = buildUpdatePaymentUrl(subscription.updateToken);
+  const portalUrl = subscription.portalCode
+    ? buildShortPortalUrl(subscription.portalCode)
+    : buildUpdatePaymentUrl(subscription.updateToken);
 
   if (subscription.customerEmail) {
     await sendDunningEmail({
@@ -72,10 +75,16 @@ export async function POST(req: NextRequest) {
     });
   }
 
+  await prisma.whatsAppSession.upsert({
+    where: { phone_subscriptionId: { phone: subscription.customerPhone, subscriptionId: subscription.id } },
+    create: { phone: subscription.customerPhone, subscriptionId: subscription.id, step: "AWAITING_REASON" },
+    update: { step: "AWAITING_REASON", pendingOffer: null },
+  }).catch(() => null);
+
   await sendDunningMessage(
     subscription.customerPhone,
     subscription.tenant.name,
-    updateUrl
+    subscription.updateToken ?? ""
   ).catch((e) => console.error("[Admin Dunning] WhatsApp hatası:", e));
 
   return NextResponse.json({
