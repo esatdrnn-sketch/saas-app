@@ -484,6 +484,24 @@
   cursor: default;
 }
 
+.btnSecondary {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1.5px solid #6b7280;
+  background: transparent;
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+}
+
+.btnSecondary:hover:not(:disabled) {
+  background: #6b7280;
+  color: #fff;
+}
+
 .btnLink {
   padding: 6px 12px;
   border-radius: 6px;
