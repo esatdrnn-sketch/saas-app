@@ -65,68 +65,68 @@ export async function POST(req: NextRequest) {
   }
 
   const sub     = session.subscription;
-  const token   = sub.updateToken;
+  const token   = sub.updateToken ?? "";
   const choice  = parseChoice(body);
   const tenantName = sub.tenant.name;
+  console.log(`[WhatsApp Webhook] Session bulundu. step=${session.step} choice=${choice} phone=${from}`);
 
   // Tenant'ın discount offer değerini bul
   const discountOffer = sub.tenant.offers.find((o) => o.reason === "TOO_EXPENSIVE" && o.offerType === "DISCOUNT");
   const discountPct   = discountOffer?.value ?? 30;
 
-  if (session.step === "AWAITING_REASON") {
-    if (choice === "1") {
-      // Kartı güncelle
-      await sendCardUpdateLink(from, token);
+  try {
+    if (session.step === "AWAITING_REASON") {
+      if (choice === "1") {
+        await sendCardUpdateLink(from, token);
+        await prisma.whatsAppSession.update({ where: { id: session.id }, data: { step: "DONE" } });
+
+      } else if (choice === "2") {
+        await sendDiscountOffer(from, tenantName, discountPct);
+        await prisma.whatsAppSession.update({
+          where: { id: session.id },
+          data: { step: "AWAITING_DISCOUNT_CONFIRM", pendingOffer: "discount" },
+        });
+
+      } else if (choice === "3") {
+        await sendPauseOffer(from, tenantName);
+        await prisma.whatsAppSession.update({
+          where: { id: session.id },
+          data: { step: "AWAITING_PAUSE_CONFIRM", pendingOffer: "pause" },
+        });
+
+      } else if (choice === "4") {
+        await sendTechnicalSupportMessage(from, token);
+        await prisma.whatsAppSession.update({ where: { id: session.id }, data: { step: "DONE" } });
+
+      } else if (choice === "5") {
+        await sendSalaryDatePauseOffer(from, tenantName);
+        await prisma.whatsAppSession.update({
+          where: { id: session.id },
+          data: { step: "AWAITING_PAUSE_CONFIRM", pendingOffer: "pause" },
+        });
+
+      } else {
+        console.log(`[WhatsApp Webhook] Tanımsız seçim: "${choice}" — cevap verilmedi`);
+      }
+
+    } else if (session.step === "AWAITING_DISCOUNT_CONFIRM") {
+      if (choice === "1") {
+        await sendDiscountLink(from, token);
+      } else {
+        await sendCancelLink(from, token);
+      }
       await prisma.whatsAppSession.update({ where: { id: session.id }, data: { step: "DONE" } });
 
-    } else if (choice === "2") {
-      // Çok pahalı → discount teklifi
-      await sendDiscountOffer(from, tenantName, discountPct);
-      await prisma.whatsAppSession.update({
-        where: { id: session.id },
-        data: { step: "AWAITING_DISCOUNT_CONFIRM", pendingOffer: "discount" },
-      });
-
-    } else if (choice === "3") {
-      // Şimdilik ihtiyacım yok → pause teklifi
-      await sendPauseOffer(from, tenantName);
-      await prisma.whatsAppSession.update({
-        where: { id: session.id },
-        data: { step: "AWAITING_PAUSE_CONFIRM", pendingOffer: "pause" },
-      });
-
-    } else if (choice === "4") {
-      // Teknik sorun
-      await sendTechnicalSupportMessage(from, token);
+    } else if (session.step === "AWAITING_PAUSE_CONFIRM") {
+      if (choice === "1") {
+        await sendPauseLink(from, token);
+      } else {
+        await sendCancelLink(from, token);
+      }
       await prisma.whatsAppSession.update({ where: { id: session.id }, data: { step: "DONE" } });
-
-    } else if (choice === "5") {
-      // Ödeme tarihi maaş gününe uymuyor → maaş gününe kadar dondur
-      await sendSalaryDatePauseOffer(from, tenantName);
-      await prisma.whatsAppSession.update({
-        where: { id: session.id },
-        data: { step: "AWAITING_PAUSE_CONFIRM", pendingOffer: "pause" },
-      });
-
     }
-    // Anlamsız giriş → cevap verme (spam önleme)
-
-  } else if (session.step === "AWAITING_DISCOUNT_CONFIRM") {
-    if (choice === "1") {
-      await sendDiscountLink(from, token);
-    } else {
-      await sendCancelLink(from, token);
-    }
-    await prisma.whatsAppSession.update({ where: { id: session.id }, data: { step: "DONE" } });
-
-  } else if (session.step === "AWAITING_PAUSE_CONFIRM") {
-    if (choice === "1") {
-      await sendPauseLink(from, token);
-    } else {
-      await sendCancelLink(from, token);
-    }
-    await prisma.whatsAppSession.update({ where: { id: session.id }, data: { step: "DONE" } });
-
+  } catch (err) {
+    console.error(`[WhatsApp Webhook] İşlem hatası:`, err);
   }
 
   return twimlEmpty();
