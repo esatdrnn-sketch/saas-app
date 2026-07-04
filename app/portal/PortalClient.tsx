@@ -4,15 +4,23 @@ import { useState } from "react";
 import type { SubscriptionStatus } from "@prisma/client";
 
 type Tab = "cancel" | "card";
-type CancelReason = "too_expensive" | "technical" | "temporary" | "alternative";
+type CancelReason = "too_expensive" | "technical" | "temporary" | "alternative" | "billing_date";
 type CancelStep = "survey" | "offer" | "confirm" | "done";
-type ResultAction = "accept_discount" | "accept_pause" | "cancel";
+type ResultAction = "accept_discount" | "accept_pause" | "accept_downgrade" | "cancel";
 
-const REASONS: { id: CancelReason; label: string; desc: string }[] = [
-  { id: "too_expensive", label: "Çok pahalı", desc: "Fiyatlandırma bütçemi aşıyor" },
-  { id: "technical", label: "Teknik sorunlar yaşıyorum", desc: "Ürün beklediğim gibi çalışmıyor" },
-  { id: "temporary", label: "Geçici olarak ihtiyacım yok", desc: "Şu an kullanmıyorum ama geri dönebilirim" },
-  { id: "alternative", label: "Başka bir alternatif buldum", desc: "Farklı bir çözüme geçiyorum" },
+export type OfferConfig  = { type: "DISCOUNT" | "PAUSE" | "DOWNGRADE"; value: number };
+export type OfferMap     = Partial<Record<string, OfferConfig>>;
+export type SurveyConfig = { label: string; description: string };
+export type SurveyMap    = Partial<Record<string, SurveyConfig>>;
+export type BrandingConfig = { brandColor?: string; logoUrl?: string; portalTitle?: string };
+export type Testimonial    = { id: string; customerName: string; role?: string; quote: string };
+
+const DEFAULT_REASONS: { id: CancelReason; label: string; desc: string }[] = [
+  { id: "too_expensive", label: "Cok pahali",                               desc: "Fiyatlandirma butcemi asiyor" },
+  { id: "technical",     label: "Teknik sorunlar yasiyorum",                desc: "Urun bekledigim gibi calismıyor" },
+  { id: "temporary",     label: "Gecici olarak ihtiyacim yok",              desc: "Su an kullanmiyorum ama geri donebilirim" },
+  { id: "alternative",   label: "Baska bir alternatif buldum",              desc: "Farklı bir cozume geciyorum" },
+  { id: "billing_date",  label: "Odeme tarihi maas gunume uymuyor",         desc: "Para geldiginde odeyebilirim ama su an tam zamani degil" },
 ];
 
 interface Props {
@@ -22,58 +30,89 @@ interface Props {
   planName?: string;
   amount?: number;
   currency?: string;
+  pauseUntil?: string;
+  offerMap: OfferMap;
+  surveyMap: SurveyMap;
+  branding: BrandingConfig;
+  testimonials: Testimonial[];
+  autoOffer?: "discount" | "pause";
+  embed?: boolean;
 }
 
-export default function PortalClient({ token, tenantName, subscriptionStatus, planName, amount, currency = "TRY" }: Props) {
-  const [activeTab, setActiveTab] = useState<Tab>(subscriptionStatus === "PAST_DUE" ? "card" : "cancel");
+function notify(type: "SUBKORU_CLOSE" | "SUBKORU_SAVED" | "SUBKORU_CANCELLED") {
+  if (typeof window !== "undefined") {
+    window.parent.postMessage({ type }, "*");
+  }
+}
+
+export default function PortalClient({
+  token, tenantName, subscriptionStatus,
+  planName, amount, currency = "TRY",
+  pauseUntil, offerMap, surveyMap, branding, testimonials, autoOffer,
+  embed = false,
+}: Props) {
+  const [activeTab, setActiveTab] = useState<Tab>(
+    autoOffer ? "cancel" : subscriptionStatus === "PAST_DUE" ? "card" : "cancel"
+  );
+  const accent = branding.brandColor ?? "#4f46e5";
+
+  const pauseRemainingDays = pauseUntil
+    ? Math.max(0, Math.ceil((new Date(pauseUntil).getTime() - Date.now()) / (24 * 60 * 60 * 1000)))
+    : 0;
+
+  if (subscriptionStatus === "PAUSED") {
+    return (
+      <PausedView
+        token={token} tenantName={tenantName} accent={accent}
+        branding={branding} remainingDays={pauseRemainingDays}
+        pauseUntil={pauseUntil} embed={embed}
+        onClose={() => notify("SUBKORU_CLOSE")}
+        onSaved={() => notify("SUBKORU_SAVED")}
+      />
+    );
+  }
+
+  if (subscriptionStatus === "CANCELLED") {
+    return (
+      <CancelledView
+        token={token} tenantName={tenantName} accent={accent} branding={branding}
+        embed={embed}
+        onClose={() => notify("SUBKORU_CLOSE")}
+        onSaved={() => notify("SUBKORU_SAVED")}
+      />
+    );
+  }
+
+  const pageWrap = embed
+    ? "h-full flex flex-col bg-slate-50 overflow-auto"
+    : "min-h-screen bg-slate-50";
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Header */}
-      <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto max-w-xl px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-indigo-600 flex items-center justify-center">
-              <span className="text-white text-xs font-bold">RP</span>
-            </div>
-            <span className="font-semibold text-slate-900 text-sm">RecoverPanel</span>
-          </div>
-          <span className="text-xs text-slate-500 flex items-center gap-1.5">
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
-            Güvenli bağlantı
-          </span>
-        </div>
-      </header>
+    <div className={pageWrap}>
+      <PortalHeader
+        branding={branding} tenantName={tenantName} accent={accent}
+        embed={embed} onClose={() => notify("SUBKORU_CLOSE")}
+      />
 
-      <main className="mx-auto max-w-xl px-4 py-10">
-        {/* PAST_DUE uyarı banner */}
+      <main className="mx-auto max-w-xl w-full px-4 py-8 flex-1">
         {subscriptionStatus === "PAST_DUE" && (
           <div className="mb-6 border-l-4 border-red-500 bg-red-50 px-4 py-3 flex items-start gap-3">
-            <svg className="w-5 h-5 text-red-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-            </svg>
+            <span className="text-red-600 font-bold mt-0.5 shrink-0">!</span>
             <div>
-              <p className="text-sm font-bold text-red-800">Ödemeniz başarısız oldu</p>
-              <p className="text-xs text-red-700 mt-0.5">
-                Aboneliğinizin devam edebilmesi için kart bilgilerinizi güncellemeniz gerekiyor.
-              </p>
+              <p className="text-sm font-bold text-red-800">Odemeniz basarisiz oldu</p>
+              <p className="text-xs text-red-700 mt-0.5">Aboneliginizin devam edebilmesi icin kart bilgilerinizi guncellemeniz gerekiyor.</p>
             </div>
           </div>
         )}
 
-        {/* Tenant info */}
         <div className="mb-8">
-          <p className="text-xs font-bold uppercase tracking-widest text-indigo-600 mb-1">Abonelik Yönetimi</p>
+          <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: accent }}>Abonelik Yonetimi</p>
           <h1 className="text-2xl font-bold text-slate-900">{tenantName}</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Aboneliğinizi yönetmek için aşağıdaki seçeneklerden birini kullanın.
-          </p>
+          <p className="mt-1 text-sm text-slate-500">Aboneliginizi yonetmek icin asagidaki seceneklerden birini kullanin.</p>
           {(planName || amount) && (
             <div className="mt-4 flex items-center gap-3 border border-slate-200 bg-white px-4 py-3">
               {planName && (
-                <span className="text-xs font-bold uppercase tracking-widest bg-indigo-50 text-indigo-700 px-2 py-1">
+                <span className="text-xs font-bold uppercase tracking-widest px-2 py-1" style={{ backgroundColor: `${accent}18`, color: accent }}>
                   {planName}
                 </span>
               )}
@@ -89,59 +128,210 @@ export default function PortalClient({ token, tenantName, subscriptionStatus, pl
 
         {/* Tabs */}
         <div className="flex border border-slate-200 bg-white mb-0">
-          <button
-            type="button"
-            onClick={() => setActiveTab("cancel")}
-            className={`flex-1 py-3 text-sm font-semibold transition-colors ${
-              activeTab === "cancel"
-                ? "bg-indigo-600 text-white"
-                : "text-slate-600 hover:bg-slate-50"
-            }`}
-          >
-            Aboneliğimi İptal Et
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("card")}
-            className={`flex-1 py-3 text-sm font-semibold border-l border-slate-200 transition-colors ${
-              activeTab === "card"
-                ? "bg-indigo-600 text-white"
-                : "text-slate-600 hover:bg-slate-50"
-            }`}
-          >
-            Kart Bilgilerimi Güncelle
-          </button>
+          {(["cancel", "card"] as Tab[]).map((t, i) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setActiveTab(t)}
+              className={`flex-1 py-3 text-sm font-semibold transition-colors ${i > 0 ? "border-l border-slate-200" : ""}`}
+              style={activeTab === t ? { backgroundColor: accent, color: "#fff" } : { color: "#475569" }}
+            >
+              {t === "cancel" ? "Aboneligi Iptal Et" : "Kart Bilgilerimi Guncelle"}
+            </button>
+          ))}
         </div>
 
-        {/* Content */}
         <div className="bg-white border border-t-0 border-slate-200">
           {activeTab === "cancel" ? (
-            <CancelFlow token={token} tenantName={tenantName} />
+            <CancelFlow
+              token={token} tenantName={tenantName} offerMap={offerMap}
+              surveyMap={surveyMap} accent={accent} testimonials={testimonials}
+              autoOffer={autoOffer} embed={embed}
+              onSaved={() => notify("SUBKORU_SAVED")}
+              onCancelled={() => notify("SUBKORU_CANCELLED")}
+            />
           ) : (
-            <CardUpdateFlow token={token} />
+            <CardUpdateFlow token={token} accent={accent} />
           )}
         </div>
       </main>
 
-      <footer className="text-center pb-8 text-xs text-slate-400">
-        256-bit SSL şifrelemesi · Verileriniz güvende
-      </footer>
+      {!embed && <PortalFooter />}
     </div>
   );
 }
 
-// ─── CANCEL FLOW ──────────────────────────────────────────────────────────────
+// ─── PAUSED VIEW ──────────────────────────────────────────────────────────────
 
-function CancelFlow({ token, tenantName }: { token: string; tenantName: string }) {
-  const [step, setStep] = useState<CancelStep>("survey");
-  const [reason, setReason] = useState<CancelReason | null>(null);
+function PausedView({ token, tenantName, accent, branding, remainingDays, pauseUntil, embed, onClose, onSaved }: {
+  token: string; tenantName: string; accent: string;
+  branding: BrandingConfig; remainingDays: number; pauseUntil?: string;
+  embed: boolean; onClose(): void; onSaved(): void;
+}) {
+  const [loading, setLoading] = useState(false);
+  const [done, setDone] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleResume() {
+    setLoading(true);
+    const res = await fetch("/api/reactivate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token }),
+    });
+    setLoading(false);
+    if (res.ok) { setDone(true); if (embed) setTimeout(onSaved, 1500); }
+    else {
+      const d = (await res.json().catch(() => null)) as { error?: string } | null;
+      setError(d?.error ?? "Bir hata olustu.");
+    }
+  }
+
+  const pageWrap = embed ? "h-full flex flex-col bg-slate-50 overflow-auto" : "min-h-screen bg-slate-50";
+
+  return (
+    <div className={pageWrap}>
+      <PortalHeader branding={branding} tenantName={tenantName} accent={accent} embed={embed} onClose={onClose} />
+      <main className="mx-auto max-w-xl px-4 py-16 text-center flex-1">
+        <div className="bg-white border border-slate-200 p-10">
+          <div className="w-16 h-16 mx-auto mb-6 flex items-center justify-center text-2xl font-bold" style={{ backgroundColor: `${accent}12`, color: accent }}>
+            II
+          </div>
+          <h1 className="text-xl font-bold text-slate-900 mb-2">Aboneliginiz Donduruldu</h1>
+          {done ? (
+            <p className="text-sm text-green-700 font-medium mt-4">Aboneliginiz yeniden aktif edildi.</p>
+          ) : (
+            <>
+              <p className="text-sm text-slate-500 mb-6">
+                {remainingDays > 0
+                  ? <><strong>{remainingDays} gun</strong> sonra otomatik olarak devam edecek.</>
+                  : pauseUntil
+                    ? <>{new Date(pauseUntil).toLocaleDateString("tr-TR")} tarihinde yeniden aktif olacak.</>
+                    : "Aboneliginiz askiya alinmistir."}
+              </p>
+              {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
+              <button
+                type="button"
+                disabled={loading}
+                onClick={handleResume}
+                className="w-full py-3 text-sm font-bold text-white disabled:opacity-40"
+                style={{ backgroundColor: accent }}
+              >
+                {loading ? "Isleniyor..." : "Aboneligi Hemen Devam Ettir"}
+              </button>
+              <p className="mt-4 text-xs text-slate-400">Beklemek isterseniz hicbir sey yapmaniza gerek yok.</p>
+            </>
+          )}
+        </div>
+      </main>
+      {!embed && <PortalFooter />}
+    </div>
+  );
+}
+
+// ─── CANCELLED VIEW ───────────────────────────────────────────────────────────
+
+function CancelledView({ token, tenantName, accent, branding, embed, onClose, onSaved }: {
+  token: string; tenantName: string; accent: string; branding: BrandingConfig;
+  embed: boolean; onClose(): void; onSaved(): void;
+}) {
+  const [loading, setLoading] = useState(false);
+  const [done, setDone] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleReactivate() {
+    setLoading(true);
+    const res = await fetch("/api/reactivate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token }),
+    });
+    setLoading(false);
+    if (res.ok) { setDone(true); if (embed) setTimeout(onSaved, 1500); }
+    else {
+      const d = (await res.json().catch(() => null)) as { error?: string } | null;
+      setError(d?.error ?? "Bir hata olustu.");
+    }
+  }
+
+  const pageWrap = embed ? "h-full flex flex-col bg-slate-50 overflow-auto" : "min-h-screen bg-slate-50";
+
+  return (
+    <div className={pageWrap}>
+      <PortalHeader branding={branding} tenantName={tenantName} accent={accent} embed={embed} onClose={onClose} />
+      <main className="mx-auto max-w-xl px-4 py-16 text-center flex-1">
+        <div className="bg-white border border-slate-200 p-10">
+          {done ? (
+            <>
+              <div className="w-16 h-16 mx-auto mb-6 bg-green-100 flex items-center justify-center text-xl font-bold text-green-600">ok</div>
+              <h1 className="text-xl font-bold text-slate-900 mb-2">Talebiniz Alindi</h1>
+              <p className="text-sm text-slate-500">Ekibimiz en kisa surede sizinle iletisime gececek.</p>
+            </>
+          ) : (
+            <>
+              <div className="w-16 h-16 mx-auto mb-6 bg-slate-100 flex items-center justify-center text-xl font-bold text-slate-500">X</div>
+              <h1 className="text-xl font-bold text-slate-900 mb-2">Aboneliginiz Iptal Edildi</h1>
+              <p className="text-sm text-slate-500 mb-8">
+                <strong>{tenantName}</strong> aboneliginiz daha once iptal edilmistir. Geri donmek ister misiniz?
+              </p>
+              {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
+              <button
+                type="button"
+                disabled={loading}
+                onClick={handleReactivate}
+                className="w-full py-3 text-sm font-bold text-white disabled:opacity-40 mb-3"
+                style={{ backgroundColor: accent }}
+              >
+                {loading ? "Isleniyor..." : "Yeniden Abone Olmak Istiyorum"}
+              </button>
+              <p className="text-xs text-slate-400">Ekibimiz sizinle iletisime gececek.</p>
+            </>
+          )}
+        </div>
+      </main>
+      {!embed && <PortalFooter />}
+    </div>
+  );
+}
+
+// ─── CANCEL FLOW ─────────────────────────────────────────────────────────────
+
+function CancelFlow({
+  token, tenantName, offerMap, surveyMap, accent, testimonials, autoOffer,
+  embed, onSaved, onCancelled,
+}: {
+  token: string; tenantName: string; offerMap: OfferMap;
+  surveyMap: SurveyMap; accent: string; testimonials: Testimonial[];
+  autoOffer?: "discount" | "pause";
+  embed: boolean; onSaved(): void; onCancelled(): void;
+}) {
+  const initialReason: CancelReason | null =
+    autoOffer === "discount" ? "too_expensive" :
+    autoOffer === "pause"    ? "temporary"     : null;
+  const initialStep: CancelStep = autoOffer ? "offer" : "survey";
+
+  const [step, setStep] = useState<CancelStep>(initialStep);
+  const [reason, setReason] = useState<CancelReason | null>(initialReason);
   const [result, setResult] = useState<ResultAction | null>(null);
+  const [acceptedOffer, setAcceptedOffer] = useState<OfferConfig | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const stepNum = step === "survey" ? 1 : step === "done" ? 3 : 2;
+  const currentOffer: OfferConfig | null = reason
+    ? (offerMap[reason.toUpperCase()]
+        ?? (reason === "billing_date"  ? (offerMap["TEMPORARY"] ?? { type: "PAUSE",    value: 30 }) : null)
+        ?? (reason === "too_expensive" ?                          { type: "DISCOUNT",  value: 30 }  : null)
+        ?? (reason === "temporary"     ?                          { type: "PAUSE",     value: 30 }  : null))
+    : null;
+  const featuredTestimonial = testimonials[0] ?? null;
 
-  async function submitAction(action: ResultAction) {
+  const reasons = DEFAULT_REASONS.map((r) => {
+    const custom = surveyMap[r.id.toUpperCase()];
+    return { ...r, label: custom?.label ?? r.label, desc: custom?.description ?? r.desc };
+  });
+
+  async function submitAction(action: ResultAction, offer?: OfferConfig) {
     setLoading(true);
     setError("");
     try {
@@ -152,52 +342,63 @@ function CancelFlow({ token, tenantName }: { token: string; tenantName: string }
       });
       if (!res.ok) {
         const data = (await res.json().catch(() => null)) as { error?: string } | null;
-        throw new Error(data?.error ?? "İstek başarısız oldu.");
+        throw new Error(data?.error ?? "Istek basarisiz oldu.");
       }
+      if (offer) setAcceptedOffer(offer);
       setResult(action);
       setStep("done");
+      if (embed) {
+        if (action === "cancel") setTimeout(onCancelled, 1800);
+        else                     setTimeout(onSaved,     1800);
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Bir hata oluştu.");
+      setError(err instanceof Error ? err.message : "Bir hata olustu.");
     } finally {
       setLoading(false);
     }
   }
 
   if (step === "done" && result) {
+    const isSuccess = result !== "cancel";
     return (
       <div className="p-8 text-center">
-        <div
-          className={`mx-auto mb-5 w-14 h-14 flex items-center justify-center ${
-            result === "cancel" ? "bg-red-100" : "bg-green-100"
-          }`}
-        >
-          <span className={`text-2xl font-bold ${result === "cancel" ? "text-red-600" : "text-green-600"}`}>
-            {result === "cancel" ? "✕" : "✓"}
+        <div className={`mx-auto mb-5 w-14 h-14 flex items-center justify-center ${isSuccess ? "bg-green-100" : "bg-red-100"}`}>
+          <span className={`text-xl font-bold ${isSuccess ? "text-green-600" : "text-red-600"}`}>
+            {isSuccess ? "ok" : "X"}
           </span>
         </div>
         {result === "cancel" && (
           <>
-            <h2 className="text-lg font-bold text-slate-900 mb-2">Aboneliğiniz iptal edildi</h2>
-            <p className="text-sm text-slate-500">
-              <strong>{tenantName}</strong> aboneliğiniz sonlandırıldı. İstediğiniz zaman tekrar abone olabilirsiniz.
-            </p>
+            <h2 className="text-lg font-bold text-slate-900 mb-2">Aboneliginiz iptal edildi</h2>
+            <p className="text-sm text-slate-500"><strong>{tenantName}</strong> aboneliginiz sonlandirildi.</p>
           </>
         )}
-        {result === "accept_discount" && (
+        {result === "accept_discount" && acceptedOffer && (
           <>
-            <h2 className="text-lg font-bold text-slate-900 mb-2">İndiriminiz uygulandı</h2>
-            <p className="text-sm text-slate-500">
-              Sonraki 2 ay boyunca aboneliğiniz <strong>%50 indirimli</strong> devam edecek. Teşekkür ederiz!
-            </p>
+            <h2 className="text-lg font-bold text-slate-900 mb-2">Indiriminiz uygulandi</h2>
+            <p className="text-sm text-slate-500">Aboneliginiz <strong>%{acceptedOffer.value} indirimli</strong> devam edecek.</p>
           </>
         )}
-        {result === "accept_pause" && (
+        {result === "accept_pause" && acceptedOffer && (
           <>
-            <h2 className="text-lg font-bold text-slate-900 mb-2">Aboneliğiniz donduruldu</h2>
-            <p className="text-sm text-slate-500">
-              Aboneliğiniz <strong>1 ay</strong> askıya alındı. Hazır olduğunuzda otomatik devam edecek.
-            </p>
+            <h2 className="text-lg font-bold text-slate-900 mb-2">Aboneliginiz donduruldu</h2>
+            <p className="text-sm text-slate-500">Aboneliginiz <strong>{acceptedOffer.value} gun</strong> askiya alindi.</p>
           </>
+        )}
+        {result === "accept_downgrade" && (
+          <>
+            <h2 className="text-lg font-bold text-slate-900 mb-2">Plan degisikliginiz iletildi</h2>
+            <p className="text-sm text-slate-500">Ekibimiz en kisa surede daha uygun plan seceneginizi isleme koyacak.</p>
+          </>
+        )}
+        {embed && (
+          <button
+            type="button"
+            onClick={result === "cancel" ? onCancelled : onSaved}
+            className="mt-6 px-6 py-2.5 text-sm font-semibold border border-slate-300 text-slate-600 hover:bg-slate-50"
+          >
+            Kapat
+          </button>
         )}
       </div>
     );
@@ -205,50 +406,45 @@ function CancelFlow({ token, tenantName }: { token: string; tenantName: string }
 
   return (
     <div className="p-6">
-      {/* Progress bar */}
+      {/* Progress */}
       <div className="flex items-center gap-0 mb-6">
         {[1, 2, 3].map((n) => (
           <div key={n} className="flex items-center flex-1 last:flex-none">
             <div
-              className={`w-7 h-7 flex items-center justify-center text-xs font-bold shrink-0 ${
-                n <= stepNum ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-400"
-              }`}
+              className="w-7 h-7 flex items-center justify-center text-xs font-bold shrink-0"
+              style={n <= stepNum ? { backgroundColor: accent, color: "#fff" } : { backgroundColor: "#f1f5f9", color: "#94a3b8" }}
             >
               {n}
             </div>
-            {n < 3 && (
-              <div className={`h-0.5 flex-1 ${n < stepNum ? "bg-indigo-600" : "bg-slate-200"}`} />
-            )}
+            {n < 3 && <div className="h-0.5 flex-1" style={{ backgroundColor: n < stepNum ? accent : "#e2e8f0" }} />}
           </div>
         ))}
         <span className="ml-3 text-xs text-slate-500 whitespace-nowrap">
-          {step === "survey" ? "Neden iptal ediyorsunuz?" : step === "offer" ? "Özel teklifiniz" : "Onay"}
+          {step === "survey" ? "Neden iptal ediyorsunuz?" : step === "offer" ? "Ozel teklifiniz" : "Onay"}
         </span>
       </div>
 
-      {/* Survey step */}
+      {/* Survey */}
       {step === "survey" && (
         <div>
-          <h2 className="text-sm font-bold text-slate-900 mb-4 uppercase tracking-wide">
-            İptal nedeninizi seçin
-          </h2>
-          <div className="space-y-2 mb-6">
-            {REASONS.map((item) => (
+          <h2 className="text-sm font-bold text-slate-900 mb-4 uppercase tracking-wide">Iptal nedeninizi secin</h2>
+          <div className="space-y-2 mb-5">
+            {reasons.map((item) => (
               <button
                 key={item.id}
                 type="button"
                 onClick={() => setReason(item.id)}
-                className={`w-full text-left p-4 border transition-colors ${
-                  reason === item.id
-                    ? "border-indigo-600 bg-indigo-50"
-                    : "border-slate-200 hover:border-slate-400 bg-white"
-                }`}
+                className="w-full text-left p-4 border transition-colors"
+                style={reason === item.id
+                  ? { borderColor: accent, backgroundColor: `${accent}08` }
+                  : { borderColor: "#e2e8f0", backgroundColor: "#fff" }}
               >
                 <div className="flex items-start gap-3">
                   <div
-                    className={`mt-0.5 w-4 h-4 border-2 flex items-center justify-center shrink-0 ${
-                      reason === item.id ? "border-indigo-600 bg-indigo-600" : "border-slate-300"
-                    }`}
+                    className="mt-0.5 w-4 h-4 border-2 flex items-center justify-center shrink-0"
+                    style={reason === item.id
+                      ? { borderColor: accent, backgroundColor: accent }
+                      : { borderColor: "#d1d5db" }}
                   >
                     {reason === item.id && <div className="w-1.5 h-1.5 bg-white" />}
                   </div>
@@ -260,76 +456,81 @@ function CancelFlow({ token, tenantName }: { token: string; tenantName: string }
               </button>
             ))}
           </div>
+
+          {featuredTestimonial && (
+            <div className="mb-5 p-4 border border-slate-200 bg-slate-50">
+              <p className="text-sm text-slate-600 italic mb-3">&ldquo;{featuredTestimonial.quote}&rdquo;</p>
+              <p className="text-xs font-semibold text-slate-700">
+                — {featuredTestimonial.customerName}
+                {featuredTestimonial.role && <span className="font-normal text-slate-500">, {featuredTestimonial.role}</span>}
+              </p>
+            </div>
+          )}
+
           <button
             type="button"
             disabled={!reason}
             onClick={() => {
               if (!reason) return;
-              setStep(reason === "too_expensive" || reason === "temporary" ? "offer" : "confirm");
+              const offer = offerMap[reason.toUpperCase()]
+                ?? (reason === "billing_date"  ? (offerMap["TEMPORARY"] ?? { type: "PAUSE",   value: 30 }) : null)
+                ?? (reason === "too_expensive" ?                           { type: "DISCOUNT", value: 30 }  : null)
+                ?? (reason === "temporary"     ?                           { type: "PAUSE",    value: 30 }  : null);
+              setStep(offer ? "offer" : "confirm");
             }}
-            className="w-full bg-indigo-600 text-white py-3 text-sm font-bold disabled:opacity-30 hover:bg-indigo-700 transition-colors uppercase tracking-wide"
+            className="w-full text-white py-3 text-sm font-bold disabled:opacity-30 uppercase tracking-wide"
+            style={{ backgroundColor: accent }}
           >
             Devam Et
           </button>
         </div>
       )}
 
-      {/* Offer — too_expensive */}
-      {step === "offer" && reason === "too_expensive" && (
+      {/* Offer */}
+      {step === "offer" && currentOffer && (
         <div>
-          <div className="border-l-4 border-indigo-600 bg-indigo-50 p-5 mb-6">
-            <span className="inline-block bg-indigo-600 text-white text-[10px] font-bold px-2 py-0.5 mb-3 uppercase tracking-widest">
-              Size Özel Teklif
+          <div className="p-5 mb-6" style={{ borderLeft: `4px solid ${accent}`, backgroundColor: `${accent}08` }}>
+            <span className="inline-block text-white text-[10px] font-bold px-2 py-0.5 mb-3 uppercase tracking-widest" style={{ backgroundColor: accent }}>
+              Size Ozel Teklif
             </span>
-            <h2 className="text-xl font-bold text-slate-900 mb-2">Sonraki 2 ay %50 indirim</h2>
-            <p className="text-sm text-slate-600">
-              Aboneliğinizi koruyun; ödemeleriniz 2 ay boyunca yarı fiyatına düşsün.
-            </p>
+            {currentOffer.type === "DISCOUNT" && (
+              <>
+                <h2 className="text-xl font-bold text-slate-900 mb-2">%{currentOffer.value} Indirim</h2>
+                <p className="text-sm text-slate-600">Bir sonraki donemde %{currentOffer.value} indirimli devam edin.</p>
+              </>
+            )}
+            {currentOffer.type === "PAUSE" && (
+              <>
+                <h2 className="text-xl font-bold text-slate-900 mb-2">{currentOffer.value} Gun Dondurma</h2>
+                <p className="text-sm text-slate-600">{currentOffer.value} gun askiya alin, hazir olunca devam edin.</p>
+              </>
+            )}
+            {currentOffer.type === "DOWNGRADE" && (
+              <>
+                <h2 className="text-xl font-bold text-slate-900 mb-2">Daha Uygun Plana Gec</h2>
+                <p className="text-sm text-slate-600">Aboneliginizi iptal etmek yerine daha uygun fiyatli bir plana gecin. Ekibimiz size en kisa surede ulasacak.</p>
+              </>
+            )}
           </div>
           <button
             type="button"
             disabled={loading}
-            onClick={() => submitAction("accept_discount")}
-            className="w-full bg-indigo-600 text-white py-3 text-sm font-bold disabled:opacity-40 hover:bg-indigo-700 transition-colors uppercase tracking-wide mb-3"
+            onClick={() => submitAction(
+              currentOffer.type === "DISCOUNT" ? "accept_discount"
+                : currentOffer.type === "PAUSE" ? "accept_pause"
+                : "accept_downgrade",
+              currentOffer
+            )}
+            className="w-full text-white py-3 text-sm font-bold disabled:opacity-40 uppercase tracking-wide mb-3"
+            style={{ backgroundColor: accent }}
           >
-            {loading ? "İşleniyor..." : "Teklifi Kabul Et"}
+            {loading ? "Isleniyor..." : currentOffer.type === "DISCOUNT" ? "Indirimi Kabul Et" : currentOffer.type === "PAUSE" ? "Aboneligi Dondur" : "Plan Dusurme Talebi Gonder"}
           </button>
           <button
             type="button"
             disabled={loading}
             onClick={() => setStep("confirm")}
-            className="w-full border border-slate-300 text-slate-600 py-3 text-sm font-medium hover:bg-slate-50 transition-colors"
-          >
-            Yine de iptal et
-          </button>
-        </div>
-      )}
-
-      {/* Offer — temporary */}
-      {step === "offer" && reason === "temporary" && (
-        <div>
-          <div className="border-l-4 border-indigo-600 bg-indigo-50 p-5 mb-6">
-            <span className="inline-block bg-indigo-600 text-white text-[10px] font-bold px-2 py-0.5 mb-3 uppercase tracking-widest">
-              Alternatif Öneri
-            </span>
-            <h2 className="text-xl font-bold text-slate-900 mb-2">1 ay dondurun (Pause)</h2>
-            <p className="text-sm text-slate-600">
-              İptal etmek yerine aboneliğinizi 1 ay askıya alın. Hazır olduğunuzda kaldığınız yerden devam edin.
-            </p>
-          </div>
-          <button
-            type="button"
-            disabled={loading}
-            onClick={() => submitAction("accept_pause")}
-            className="w-full bg-indigo-600 text-white py-3 text-sm font-bold disabled:opacity-40 hover:bg-indigo-700 transition-colors uppercase tracking-wide mb-3"
-          >
-            {loading ? "İşleniyor..." : "Aboneliği Dondur"}
-          </button>
-          <button
-            type="button"
-            disabled={loading}
-            onClick={() => setStep("confirm")}
-            className="w-full border border-slate-300 text-slate-600 py-3 text-sm font-medium hover:bg-slate-50 transition-colors"
+            className="w-full border border-slate-300 text-slate-600 py-3 text-sm font-medium hover:bg-slate-50"
           >
             Yine de iptal et
           </button>
@@ -340,42 +541,36 @@ function CancelFlow({ token, tenantName }: { token: string; tenantName: string }
       {step === "confirm" && (
         <div>
           <div className="border border-red-200 bg-red-50 p-4 mb-6">
-            <p className="text-sm text-red-800 font-medium mb-1">Bu işlem geri alınamaz</p>
-            <p className="text-sm text-red-700">
-              <strong>{tenantName}</strong> aboneliğiniz kalıcı olarak iptal edilecek ve premium özelliklere erişiminiz sona erecek.
-            </p>
+            <p className="text-sm text-red-800 font-medium mb-1">Bu islem geri alinamaz</p>
+            <p className="text-sm text-red-700"><strong>{tenantName}</strong> aboneliginiz kalici olarak iptal edilecek.</p>
           </div>
           <button
             type="button"
             disabled={loading}
             onClick={() => submitAction("cancel")}
-            className="w-full bg-red-600 text-white py-3 text-sm font-bold disabled:opacity-40 hover:bg-red-700 transition-colors uppercase tracking-wide mb-3"
+            className="w-full bg-red-600 text-white py-3 text-sm font-bold disabled:opacity-40 hover:bg-red-700 uppercase tracking-wide mb-3"
           >
-            {loading ? "İşleniyor..." : "Aboneliğimi Kalıcı Olarak İptal Et"}
+            {loading ? "Isleniyor..." : "Aboneligi Kalici Olarak Iptal Et"}
           </button>
           <button
             type="button"
             disabled={loading}
-            onClick={() =>
-              setStep(reason === "too_expensive" || reason === "temporary" ? "offer" : "survey")
-            }
-            className="w-full border border-slate-300 text-slate-600 py-3 text-sm font-medium hover:bg-slate-50 transition-colors"
+            onClick={() => setStep(currentOffer ? "offer" : "survey")}
+            className="w-full border border-slate-300 text-slate-600 py-3 text-sm font-medium hover:bg-slate-50"
           >
-            ← Geri Dön
+            Geri Don
           </button>
         </div>
       )}
 
-      {error && (
-        <p className="mt-4 text-xs text-red-600 text-center">{error}</p>
-      )}
+      {error && <p className="mt-4 text-xs text-red-600 text-center">{error}</p>}
     </div>
   );
 }
 
 // ─── CARD UPDATE FLOW ─────────────────────────────────────────────────────────
 
-function CardUpdateFlow({ token }: { token: string }) {
+function CardUpdateFlow({ token, accent }: { token: string; accent: string }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -388,54 +583,76 @@ function CardUpdateFlow({ token }: { token: string }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token }),
       });
-      const data = (await res.json().catch(() => null)) as {
-        checkoutUrl?: string;
-        error?: string;
-      } | null;
-      if (!res.ok || !data?.checkoutUrl) {
-        throw new Error(data?.error ?? "Yönlendirme başarısız oldu.");
-      }
+      const data = (await res.json().catch(() => null)) as { checkoutUrl?: string; error?: string } | null;
+      if (!res.ok || !data?.checkoutUrl) throw new Error(data?.error ?? "Yonlendirme basarisiz oldu.");
       window.location.href = data.checkoutUrl;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Bir hata oluştu.");
+      setError(err instanceof Error ? err.message : "Bir hata olustu.");
       setLoading(false);
     }
   }
 
   return (
     <div className="p-6">
-      <h2 className="text-sm font-bold text-slate-900 mb-5 uppercase tracking-wide">
-        Kart Bilgilerini Güncelle
-      </h2>
-
+      <h2 className="text-sm font-bold text-slate-900 mb-5 uppercase tracking-wide">Kart Bilgilerini Guncelle</h2>
       <div className="border border-slate-200 bg-slate-50 p-5 mb-6">
-        <div className="flex items-start gap-3">
-          <svg className="w-5 h-5 text-indigo-600 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-          </svg>
-          <div>
-            <p className="text-sm font-semibold text-slate-900 mb-1">Güvenli ödeme sayfasına yönlendirileceksiniz</p>
-            <p className="text-xs text-slate-500">
-              Kart bilgileriniz iyzico'nun PCI DSS sertifikalı güvenli sayfasında işlenir. Bilgileriniz bizim sistemimizde saklanmaz.
-            </p>
-          </div>
-        </div>
+        <p className="text-sm font-semibold text-slate-900 mb-1">Guvenli odeme sayfasina yonlendirileceksiniz</p>
+        <p className="text-xs text-slate-500">Kart bilgileriniz iyzico&apos;nun PCI DSS sertifikali guvenli sayfasinda islenir.</p>
       </div>
-
       {error && <p className="mb-4 text-xs text-red-600">{error}</p>}
-
       <button
         type="button"
         disabled={loading}
         onClick={handleRedirect}
-        className="w-full bg-indigo-600 text-white py-3 text-sm font-bold disabled:opacity-40 hover:bg-indigo-700 transition-colors uppercase tracking-wide"
+        className="w-full text-white py-3 text-sm font-bold disabled:opacity-40 uppercase tracking-wide"
+        style={{ backgroundColor: accent }}
       >
-        {loading ? "Yönlendiriliyor..." : "iyzico ile Kartı Güncelle →"}
+        {loading ? "Yonlendiriliyor..." : "iyzico ile Karti Guncelle"}
       </button>
-
-      <p className="mt-4 text-center text-xs text-slate-400">
-        256-bit SSL şifrelemesi · iyzico güvencesiyle
-      </p>
+      <p className="mt-4 text-center text-xs text-slate-400">256-bit SSL sifrelemesi</p>
     </div>
   );
+}
+
+// ─── SHARED ───────────────────────────────────────────────────────────────────
+
+function PortalHeader({ branding, tenantName, accent, embed, onClose }: {
+  branding: BrandingConfig; tenantName: string; accent: string;
+  embed: boolean; onClose(): void;
+}) {
+  return (
+    <header className="border-b border-slate-200 bg-white shrink-0">
+      <div className="mx-auto max-w-xl px-4 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          {branding.logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={branding.logoUrl} alt={tenantName} className="h-7 w-auto object-contain" />
+          ) : (
+            <div className="w-7 h-7 flex items-center justify-center" style={{ backgroundColor: accent }}>
+              <span className="text-white text-xs font-bold">{(branding.portalTitle ?? tenantName).slice(0, 2).toUpperCase()}</span>
+            </div>
+          )}
+          <span className="font-semibold text-slate-900 text-sm">{branding.portalTitle ?? "Subkoru"}</span>
+        </div>
+        {embed ? (
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Kapat"
+            className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded transition-colors"
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <path d="M1 1l12 12M13 1L1 13" />
+            </svg>
+          </button>
+        ) : (
+          <span className="text-xs text-slate-500">Guvenli baglanti</span>
+        )}
+      </div>
+    </header>
+  );
+}
+
+function PortalFooter() {
+  return <footer className="text-center pb-8 text-xs text-slate-400">256-bit SSL sifrelemesi</footer>;
 }

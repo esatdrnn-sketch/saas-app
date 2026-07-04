@@ -2,9 +2,9 @@ import type { CancelOutcome, CancelReason } from "@prisma/client";
 
 export const CANCEL_REASON_LABELS: Record<CancelReason, string> = {
   TOO_EXPENSIVE: "Çok pahalı",
-  TECHNICAL: "Teknik sorunlar yaşıyorum",
-  TEMPORARY: "Geçici olarak ihtiyacım yok",
-  ALTERNATIVE: "Başka bir alternatif buldum",
+  TECHNICAL:     "Teknik sorunlar yaşıyorum",
+  TEMPORARY:     "Geçici olarak ihtiyacım yok",
+  ALTERNATIVE:   "Başka bir alternatif buldum",
 };
 
 export const CANCEL_REASON_ORDER: CancelReason[] = [
@@ -20,19 +20,24 @@ export type CancelReasonInput =
   | "temporary"
   | "alternative";
 
-export type CancelActionInput = "accept_discount" | "accept_pause" | "cancel";
+export type CancelActionInput =
+  | "accept_discount"
+  | "accept_pause"
+  | "accept_downgrade"
+  | "cancel";
 
 const REASON_MAP: Record<CancelReasonInput, CancelReason> = {
   too_expensive: "TOO_EXPENSIVE",
-  technical: "TECHNICAL",
-  temporary: "TEMPORARY",
-  alternative: "ALTERNATIVE",
+  technical:     "TECHNICAL",
+  temporary:     "TEMPORARY",
+  alternative:   "ALTERNATIVE",
 };
 
 const ACTION_MAP: Record<CancelActionInput, CancelOutcome> = {
-  accept_discount: "ACCEPT_DISCOUNT",
-  accept_pause: "ACCEPT_PAUSE",
-  cancel: "CANCEL",
+  accept_discount:  "ACCEPT_DISCOUNT",
+  accept_pause:     "ACCEPT_PAUSE",
+  accept_downgrade: "ACCEPT_DOWNGRADE",
+  cancel:           "CANCEL",
 };
 
 export function parseCancelReason(value: string): CancelReason | null {

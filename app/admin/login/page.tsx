@@ -41,7 +41,7 @@ export default function AdminLoginPage() {
     <div className={styles.root}>
       <div className={styles.card}>
         <div className={styles.header}>
-          <p className={styles.brand}>Churn Recovery</p>
+          <p className={styles.brand}>Subkoru</p>
           <h1 className={styles.title}>Admin Girişi</h1>
         </div>
 

@@ -8,7 +8,10 @@ import {
 import { generateUpdateToken } from "@/lib/subscription-token";
 import { buildUpdatePaymentUrl } from "@/lib/app-url";
 import { sendDunningMessage } from "@/lib/whatsapp";
-import { sendDunningEmail } from "@/lib/email";
+import { sendDunningEmail, sendTenantNotificationEmail } from "@/lib/email";
+import { fireTenantWebhook } from "@/lib/tenant-webhook";
+
+const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
 
 export async function POST(req: NextRequest) {
   let rawPayload: IyzicoRawPayload;
@@ -16,45 +19,21 @@ export async function POST(req: NextRequest) {
   try {
     rawPayload = (await req.json()) as IyzicoRawPayload;
   } catch {
-    return NextResponse.json(
-      { error: "Geçersiz JSON gövdesi." },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Geçersiz JSON gövdesi." }, { status: 400 });
   }
 
   const secretKey = process.env.IYZICO_SECRET_KEY;
-
   if (!secretKey) {
-    console.error("[iyzico Webhook] IYZICO_SECRET_KEY tanımlı değil.");
-    return NextResponse.json(
-      { error: "Sunucu yapılandırma hatası." },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Sunucu yapılandırma hatası." }, { status: 500 });
   }
 
-  // iyzico imza doğrulama: SHA-1(secretKey + iyziReferenceCode + iyziEventType) → base64
   if (!verifyIyzicoWebhookSignature(rawPayload, secretKey)) {
-    console.warn(
-      `[iyzico Webhook] İmza doğrulama başarısız. IP: ${req.headers.get("x-forwarded-for") ?? "bilinmiyor"}`,
-      {
-        iyziEventType: rawPayload.iyziEventType,
-        iyziReferenceCode: rawPayload.iyziReferenceCode,
-        iyziSignature: rawPayload.iyziSignature,
-      }
-    );
-    return NextResponse.json(
-      { error: "Geçersiz webhook imzası." },
-      { status: 401 }
-    );
+    console.warn("[iyzico Webhook] İmza doğrulama başarısız.");
+    return NextResponse.json({ error: "Geçersiz webhook imzası." }, { status: 401 });
   }
 
   const webhook = parseIyzicoWebhook(rawPayload);
-
   if (!webhook) {
-    // Tanımadığımız event tipi — 200 döndürüyoruz ki iyzico tekrar göndermesın
-    console.log(
-      `[iyzico Webhook] Tanımadık event atlandı: ${rawPayload.iyziEventType}`
-    );
     return NextResponse.json({ received: true, ignored: true });
   }
 
@@ -68,19 +47,43 @@ export async function POST(req: NextRequest) {
       planName: true,
       amount: true,
       currency: true,
-      tenant: { select: { name: true } },
+      tenant: { select: { name: true, webhookUrl: true, notificationEmail: true } },
     },
   });
 
   if (!subscription) {
-    console.log(
-      `[iyzico Webhook] Abonelik bulunamadı: ${webhook.subscriptionReferenceCode}`
-    );
     return NextResponse.json({ received: true });
   }
 
+  async function notifyTenant(action: string, status: string) {
+    if (subscription!.tenant.notificationEmail) {
+      void sendTenantNotificationEmail({
+        to: subscription!.tenant.notificationEmail,
+        tenantName: subscription!.tenant.name,
+        action,
+        customerEmail: subscription!.customerEmail,
+        customerPhone: subscription!.customerPhone,
+        planName: subscription!.planName,
+        amount: subscription!.amount,
+        currency: subscription!.currency,
+        dashboardUrl: `${appUrl}/tenant/dashboard`,
+      });
+    }
+    if (subscription!.tenant.webhookUrl) {
+      void fireTenantWebhook(subscription!.tenant.webhookUrl, {
+        event: `subscription.${action.toLowerCase()}`,
+        status,
+        customerEmail: subscription!.customerEmail,
+        customerPhone: subscription!.customerPhone,
+        planName: subscription!.planName,
+        amount: subscription!.amount,
+        currency: subscription!.currency,
+      });
+    }
+  }
+
+  // ── payment.failed ────────────────────────────────────────────────────────
   if (webhook.event === "payment.failed") {
-    // İdempotency: zaten PAST_DUE ise tekrar işleme
     if (subscription.status === "PAST_DUE") {
       return NextResponse.json({ received: true, skipped: true, reason: "already_past_due" });
     }
@@ -93,13 +96,15 @@ export async function POST(req: NextRequest) {
       data: { status: "PAST_DUE", updateToken },
     });
 
-    await sendDunningMessage(
-      subscription.customerPhone,
-      subscription.tenant.name,
-      updateUrl
-    ).catch((err) =>
-      console.error("[Webhook] WhatsApp gönderim hatası:", err)
-    );
+    // WhatsApp session oluştur (konuşma akışı için)
+    void prisma.whatsAppSession.upsert({
+      where: { phone_subscriptionId: { phone: subscription.customerPhone, subscriptionId: subscription.id } },
+      create: { phone: subscription.customerPhone, subscriptionId: subscription.id, step: "AWAITING_REASON" },
+      update: { step: "AWAITING_REASON", pendingOffer: null },
+    }).catch(() => null);
+
+    await sendDunningMessage(subscription.customerPhone, subscription.tenant.name, updateUrl)
+      .catch((err) => console.error("[Webhook] WhatsApp hatası:", err));
 
     if (subscription.customerEmail) {
       try {
@@ -112,51 +117,33 @@ export async function POST(req: NextRequest) {
           amount: subscription.amount,
           currency: subscription.currency,
         });
-
         await prisma.dunningAttempt.create({
-          data: {
-            subscriptionId: subscription.id,
-            attemptNumber: 1,
-            emailTo: subscription.customerEmail,
-          },
+          data: { subscriptionId: subscription.id, attemptNumber: 1, emailTo: subscription.customerEmail },
         });
-      } catch (emailErr) {
-        console.error("[Webhook] E-posta gönderim hatası:", emailErr);
+      } catch (e) {
+        console.error("[Webhook] E-posta hatası:", e);
       }
     }
 
-    console.log(
-      `[iyzico Webhook] Ödeme başarısız → PAST_DUE: ${webhook.subscriptionReferenceCode}`
-    );
+    await notifyTenant("payment_failed", "PAST_DUE");
     return NextResponse.json({ received: true, status: "PAST_DUE" });
   }
 
-  // card.updated → PAST_DUE'dan kurtarıldı
+  // ── card.updated → RECOVERED ──────────────────────────────────────────────
   if (webhook.event === "card.updated") {
     if (subscription.status === "RECOVERED") {
       return NextResponse.json({ received: true, skipped: true, reason: "already_recovered" });
     }
-    await prisma.subscription.update({
-      where: { id: subscription.id },
-      data: { status: "RECOVERED" },
-    });
-    console.log(
-      `[iyzico Webhook] Kart güncellendi → RECOVERED: ${webhook.subscriptionReferenceCode}`
-    );
+    await prisma.subscription.update({ where: { id: subscription.id }, data: { status: "RECOVERED" } });
+    await notifyTenant("recovered", "RECOVERED");
     return NextResponse.json({ received: true, status: "RECOVERED" });
   }
 
-  // payment.success
+  // ── payment.success → ACTIVE ──────────────────────────────────────────────
   if (subscription.status === "ACTIVE") {
     return NextResponse.json({ received: true, skipped: true, reason: "already_active" });
   }
-  await prisma.subscription.update({
-    where: { id: subscription.id },
-    data: { status: "ACTIVE" },
-  });
-
-  console.log(
-    `[iyzico Webhook] Ödeme başarılı → ACTIVE: ${webhook.subscriptionReferenceCode}`
-  );
+  await prisma.subscription.update({ where: { id: subscription.id }, data: { status: "ACTIVE" } });
+  await notifyTenant("payment_success", "ACTIVE");
   return NextResponse.json({ received: true, status: "ACTIVE" });
 }

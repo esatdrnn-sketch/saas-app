@@ -7,47 +7,145 @@ datasource db {
 }
 
 model Tenant {
-  id            String         @id @default(cuid())
-  name          String
-  loginKey      String         @unique @default(uuid())
-  createdAt     DateTime       @default(now())
-  subscriptions Subscription[]
+  id                String               @id @default(cuid())
+  name              String
+  loginKey          String               @unique @default(uuid())
+  webhookUrl        String?
+  slackWebhookUrl   String?
+  notificationEmail String?
+  brandColor        String?
+  logoUrl           String?
+  portalTitle       String?
+  winbackDays       Int                  @default(7)
+  apiKey            String?              @unique
+  iyzicoApiKey      String?
+  iyzicoSecretKey   String?
+  iyzicoBaseUrl     String?
+  createdAt         DateTime             @default(now())
+  subscriptions     Subscription[]
+  offers            TenantOffer[]
+  surveyConfigs     TenantSurveyConfig[]
+  users             TenantUser[]
+  emailConfig       TenantEmailConfig?
+  testimonials      TenantTestimonial[]
+}
+
+model TenantUser {
+  id           String   @id @default(cuid())
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name         String
+  email        String
+  passwordHash String
+  createdAt    DateTime @default(now())
+
+  @@unique([tenantId, email])
+}
+
+model TenantEmailConfig {
+  id         String  @id @default(cuid())
+  tenantId   String  @unique
+  tenant     Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  fromName   String?
+  replyTo    String?
+  footerNote String?
+}
+
+model TenantTestimonial {
+  id           String @id @default(cuid())
+  tenantId     String
+  tenant       Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customerName String
+  role         String?
+  quote        String
+  displayOrder Int    @default(0)
+}
+
+model TenantOffer {
+  id        String       @id @default(cuid())
+  tenantId  String
+  tenant    Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  reason    CancelReason
+  offerType OfferType
+  value     Int?
+
+  @@unique([tenantId, reason])
+}
+
+model TenantSurveyConfig {
+  id          String       @id @default(cuid())
+  tenantId    String
+  tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  reason      CancelReason
+  label       String
+  description String
+
+  @@unique([tenantId, reason])
 }
 
 model Subscription {
-  id                  String               @id @default(cuid())
-  tenantId            String
-  tenant              Tenant               @relation(fields: [tenantId], references: [id])
-  customerPhone       String
-  customerEmail       String?
-  planName            String?
-  amount              Float?
-  currency            String               @default("TRY")
-  status              SubscriptionStatus   @default(ACTIVE)
-  iyzicoSubRef        String?              @unique
-  updateToken         String               @unique @default(uuid())
-  createdAt           DateTime             @default(now())
-  updatedAt           DateTime             @updatedAt
-  cancellationEvents  CancellationEvent[]
-  dunningAttempts     DunningAttempt[]
+  id                   String              @id @default(cuid())
+  tenantId             String
+  tenant               Tenant              @relation(fields: [tenantId], references: [id])
+  customerPhone        String
+  customerEmail        String?
+  planName             String?
+  amount               Float?
+  currency             String              @default("TRY")
+  status               SubscriptionStatus  @default(ACTIVE)
+  iyzicoSubRef         String?             @unique
+  updateToken          String              @unique @default(uuid())
+  portalCode           String?             @unique
+  updateTokenExpiresAt DateTime?
+  pauseUntil           DateTime?
+  winbackSentAt        DateTime?
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  cancellationEvents   CancellationEvent[]
+  dunningAttempts      DunningAttempt[]
+  whatsAppSessions     WhatsAppSession[]
 }
 
 model DunningAttempt {
   id             String       @id @default(cuid())
   subscriptionId String
-  subscription   Subscription @relation(fields: [subscriptionId], references: [id])
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
   attemptNumber  Int
   emailTo        String
   sentAt         DateTime     @default(now())
 }
 
 model CancellationEvent {
-  id             String       @id @default(cuid())
+  id             String        @id @default(cuid())
   subscriptionId String
-  subscription   Subscription @relation(fields: [subscriptionId], references: [id])
+  subscription   Subscription  @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
   reason         CancelReason
   action         CancelOutcome
+  createdAt      DateTime      @default(now())
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorType  String
+  actorId    String?
+  action     String
+  entityType String
+  entityId   String
+  metadata   String?
+  createdAt  DateTime @default(now())
+}
+
+model WhatsAppSession {
+  id             String       @id @default(cuid())
+  phone          String
+  subscriptionId String
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  step           String       @default("AWAITING_REASON")
+  pendingOffer   String?
   createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([phone, subscriptionId])
 }
 
 enum CancelReason {
@@ -60,6 +158,7 @@ enum CancelReason {
 enum CancelOutcome {
   ACCEPT_DISCOUNT
   ACCEPT_PAUSE
+  ACCEPT_DOWNGRADE
   CANCEL
 }
 
@@ -69,4 +168,10 @@ enum SubscriptionStatus {
   RECOVERED
   PAUSED
   CANCELLED
+}
+
+enum OfferType {
+  DISCOUNT
+  PAUSE
+  DOWNGRADE
 }

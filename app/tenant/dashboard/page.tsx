@@ -1,4 +1,4 @@
-import { cookies } from "next/headers";
+﻿import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { CANCEL_REASON_LABELS, CANCEL_REASON_ORDER } from "@/lib/cancellation";
@@ -106,7 +106,7 @@ export default async function TenantDashboardPage() {
                 color: "#6b7280",
               }}
             >
-              RecoverPanel
+              Subkoru
             </p>
             <h1
               style={{
@@ -284,19 +284,21 @@ export default async function TenantDashboardPage() {
                           {last ? `${last.attemptNumber}. deneme` : "—"}
                         </td>
                         <td style={{ padding: "16px 20px", borderBottom: "1px solid #f1f5f9" }}>
-                          <a
-                            href={`${appUrl}/?token=${sub.updateToken}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            style={{
-                              fontSize: 12,
-                              color: "#4f46e5",
-                              textDecoration: "underline",
-                              textUnderlineOffset: 2,
-                            }}
-                          >
-                            Aç →
-                          </a>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                            <a
+                              href={`${appUrl}/?token=${sub.updateToken}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              style={{ fontSize: 12, color: "#4f46e5", textDecoration: "underline", textUnderlineOffset: 2 }}
+                            >
+                              Ac →
+                            </a>
+                            {sub.status === "PAUSED" && sub.pauseUntil && (
+                              <span style={{ fontSize: 11, color: "#d97706", fontWeight: 600 }}>
+                                {Math.max(0, Math.ceil((sub.pauseUntil.getTime() - Date.now()) / 86400000))} gun kaldi
+                              </span>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     );

@@ -14,11 +14,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Yetkisiz." }, { status: 401 });
   }
 
-  const { name } = (await req.json()) as { name?: string };
+  const { name, webhookUrl } = (await req.json()) as {
+    name?: string;
+    webhookUrl?: string;
+  };
+
   if (!name?.trim()) {
     return NextResponse.json({ error: "Tenant adı zorunlu." }, { status: 400 });
   }
 
-  const tenant = await prisma.tenant.create({ data: { name: name.trim() } });
+  const tenant = await prisma.tenant.create({
+    data: {
+      name: name.trim(),
+      webhookUrl: webhookUrl?.trim() || null,
+    },
+  });
   return NextResponse.json({ tenant }, { status: 201 });
 }

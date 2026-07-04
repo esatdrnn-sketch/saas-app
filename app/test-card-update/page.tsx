@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 
@@ -46,7 +46,7 @@ export default function TestCardUpdatePage() {
             <div className="w-7 h-7 bg-indigo-600 flex items-center justify-center">
               <span className="text-white text-xs font-bold">RP</span>
             </div>
-            <span className="font-semibold text-slate-900 text-sm">RecoverPanel</span>
+            <span className="font-semibold text-slate-900 text-sm">Subkoru</span>
           </div>
           <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700">
             TEST MODU
@@ -155,7 +155,7 @@ export default function TestCardUpdatePage() {
 
 
       <footer className="pb-6 text-center text-xs text-slate-400">
-        RecoverPanel · Geliştirme / Test Ortamı
+        Subkoru · Geliştirme / Test Ortamı
       </footer>
     </div>
   );

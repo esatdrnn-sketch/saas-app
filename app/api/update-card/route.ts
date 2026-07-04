@@ -12,7 +12,10 @@ export async function POST(req: NextRequest) {
 
   const subscription = await prisma.subscription.findUnique({
     where: { updateToken: token },
-    select: { id: true, iyzicoSubRef: true, status: true },
+    select: {
+      id: true, iyzicoSubRef: true, status: true,
+      tenant: { select: { iyzicoApiKey: true, iyzicoSecretKey: true, iyzicoBaseUrl: true } },
+    },
   });
 
   if (!subscription) {
@@ -44,11 +47,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ checkoutUrl: "/test-card-update" });
   }
 
+  const tenantCreds = subscription.tenant.iyzicoApiKey && subscription.tenant.iyzicoSecretKey
+    ? { apiKey: subscription.tenant.iyzicoApiKey, secretKey: subscription.tenant.iyzicoSecretKey, baseUrl: subscription.tenant.iyzicoBaseUrl ?? undefined }
+    : undefined;
+
   try {
     const { checkoutUrl } = await initSubscriptionCardUpdate({
       subscriptionReferenceCode: subscription.iyzicoSubRef,
       callbackUrl: `${appUrl}/card-updated?token=${encodeURIComponent(token)}`,
-    });
+    }, tenantCreds);
     return NextResponse.json({ checkoutUrl });
   } catch {
     return NextResponse.json({ checkoutUrl: `/test-card-update?token=${encodeURIComponent(token)}` });

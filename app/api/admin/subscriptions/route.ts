@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
+import { generatePortalCode } from "@/lib/app-url";
 
 async function isAdmin(): Promise<boolean> {
   const secret = process.env.ADMIN_SESSION_SECRET;
@@ -24,14 +25,19 @@ export async function POST(req: NextRequest) {
     iyzicoSubRef?: string;
   };
 
-  const { tenantId, customerPhone, customerEmail, planName, amount, currency, iyzicoSubRef } = body;
+  const { tenantId, customerPhone: rawPhone, customerEmail, planName, amount, currency, iyzicoSubRef } = body;
 
-  if (!tenantId || !customerPhone) {
+  if (!tenantId || !rawPhone) {
     return NextResponse.json(
       { error: "tenantId ve customerPhone zorunlu." },
       { status: 400 }
     );
   }
+
+  // Telefonu E.164 formatına çevir: 05xx → +905xx
+  let customerPhone = rawPhone.replace(/\s/g, "");
+  if (customerPhone.startsWith("0") && customerPhone.length === 11) customerPhone = "+90" + customerPhone.slice(1);
+  if (!customerPhone.startsWith("+")) customerPhone = "+" + customerPhone;
 
   const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
   if (!tenant) {
@@ -47,6 +53,7 @@ export async function POST(req: NextRequest) {
       amount: amount ? Number(amount) : null,
       currency: currency || "TRY",
       iyzicoSubRef: iyzicoSubRef || null,
+      portalCode: generatePortalCode(),
     },
   });
 
