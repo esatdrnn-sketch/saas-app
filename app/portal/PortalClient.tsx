@@ -133,7 +133,7 @@ export default function PortalClient({
               key={t}
               type="button"
               onClick={() => setActiveTab(t)}
-              className={`flex-1 py-3 text-sm font-semibold transition-colors ${i > 0 ? "border-l border-slate-200" : ""}`}
+              className={`flex-1 min-w-0 px-2 py-3 text-sm font-semibold text-center transition-colors ${i > 0 ? "border-l border-slate-200" : ""}`}
               style={activeTab === t ? { backgroundColor: accent, color: "#fff" } : { color: "#475569" }}
             >
               {t === "cancel" ? "Aboneligi Iptal Et" : "Kart Bilgilerimi Guncelle"}
